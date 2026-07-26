@@ -116,7 +116,7 @@ export default function MonthlyActivityHeatmap({ activityData }: MonthlyActivity
                         {/* Y-Axis Labels */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginRight: 8, marginTop: 2 }}>
                             {WEEKDAYS.map((w, i) => (
-                                <div key={w} style={{ height: 16, fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: '16px', display: 'flex', alignItems: 'center' }}>
+                                <div key={w} style={{ height: 24, fontSize: '0.75rem', color: 'var(--color-text-muted)', lineHeight: '24px', display: 'flex', alignItems: 'center' }}>
                                     {i % 2 !== 0 ? w : ''}
                                 </div>
                             ))}
@@ -127,15 +127,15 @@ export default function MonthlyActivityHeatmap({ activityData }: MonthlyActivity
                             <div key={cIndex} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {Array.from({ length: 7 }).map((_, rIndex) => {
                                     const cell = grid[rIndex][cIndex];
-                                    if (!cell) return <div key={rIndex} style={{ width: 16, height: 16 }} />;
+                                    if (!cell) return <div key={rIndex} style={{ width: 24, height: 24 }} />;
 
                                     return (
                                         <div
                                             key={rIndex}
                                             title={`${cell.count} logs on ${cell.dateStr}`}
                                             style={{
-                                                width: 16,
-                                                height: 16,
+                                                width: 24,
+                                                height: 24,
                                                 borderRadius: 2, // Slight border radius matches github
                                                 backgroundColor: getColor(cell.count, cell.inMonth),
                                                 border: cell.inMonth && cell.count === 0 ? '1px solid rgba(255,255,255,0.05)' : 'none',

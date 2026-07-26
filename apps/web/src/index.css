@@ -361,3 +361,42 @@ textarea.input {
   resize: vertical;
   min-height: 120px;
 }
+/* %%% Mobile Responsiveness %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+  
+  .profile-header {
+    align-items: center !important;
+    text-align: center !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  
+  .profile-header > div:last-child {
+    align-self: center !important;
+    margin-top: 10px !important;
+  }
+  
+  .profile-stats-grid {
+    gap: 10px !important;
+  }
+  
+  .profile-stats-grid > div {
+    flex: 1 1 120px !important;
+    padding: 10px 14px !important;
+  }
+  
+  .activity-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+

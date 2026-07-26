@@ -38,6 +38,14 @@ interface ProfileData {
         media: { id: string; title: string; mediaType: string; posterUrl: string | null }
     }[]
     activityData: Record<string, number>
+    userReviews?: {
+        id: string
+        watchedDate: string
+        rating: number | null
+        review: string
+        liked: boolean
+        media: { id: string; title: string; mediaType: string; posterUrl: string | null; releaseYear: number | null }
+    }[]
 }
 
 export default function ProfilePage() {
@@ -86,6 +94,131 @@ export default function ProfilePage() {
         { label: 'Following', value: profile._count.following, icon: UserIcon },
     ]
 
+    const renderTabContent = () => {
+        if (activeTab === 'diary') {
+            return (
+                <div className="animate-fade-in">
+                    <h2 style={{ fontWeight: 700, marginBottom: 20, fontSize: '1rem', color: 'var(--color-text-muted)' }}>
+                        RECENT ACTIVITY
+                    </h2>
+                    {profile.recentDiary.length === 0 ? (
+                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>No diary entries yet.</p>
+                    ) : (
+                        <div className="activity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 14 }}>
+                            {profile.recentDiary.map(entry => (
+                                <Link key={entry.id} to={`/media/${entry.media.id}`} style={{ textDecoration: 'none' }}>
+                                    <div className="card" style={{ overflow: 'hidden' }}>
+                                        <div style={{
+                                            aspectRatio: '2/3', background: 'var(--color-bg-elevated)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                                        }}>
+                                            {entry.media.posterUrl
+                                                ? <img src={entry.media.posterUrl} alt={entry.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                : <Film size={28} style={{ color: 'var(--color-text-dim)' }} />
+                                            }
+                                        </div>
+                                        <div style={{ padding: '8px 10px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                {entry.liked && <Heart size={12} fill="#f43f5e" color="#f43f5e" />}
+                                                {entry.rating && (
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--color-accent)', fontWeight: 700 }}>
+                                                        ★{entry.rating}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p style={{
+                                                fontSize: '0.75rem', fontWeight: 600, marginTop: 4, color: 'var(--color-text)',
+                                                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                            }}>
+                                                {entry.media.title}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                    {profile._count.diaryEntries > 5 && (
+                        <Link to={isOwn ? '/diary' : `/profile/${username}/diary`} className="btn btn-outline" style={{ marginTop: 24, display: 'inline-flex' }}>
+                            View all entries
+                        </Link>
+                    )}
+                </div>
+            )
+        }
+
+        if (activeTab === 'lists') {
+            return (
+                <div className="animate-fade-in">
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                        {isOwn
+                            ? <><Link to="/lists" style={{ fontWeight: 600 }}>View and manage</Link> your {profile._count.lists} lists.</>
+                            : `${profile.username} has ${profile._count.lists} public lists.`}
+                    </p>
+                </div>
+            )
+        }
+
+        if (activeTab === 'reviews') {
+            return (
+                <div style={{ padding: '40px 0', color: 'var(--color-text-muted)' }}>
+                    {(!profile.userReviews || profile.userReviews.length === 0) && (
+                        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                            No reviews written yet.
+                        </div>
+                    )}
+                    {profile.userReviews && profile.userReviews.map((entry) => (
+                        <div key={entry.id} style={{
+                            padding: '24px',
+                            background: 'var(--color-bg-elevated)',
+                            borderLeft: '4px solid var(--color-primary)',
+                            marginBottom: 16,
+                            display: 'flex',
+                            gap: 16
+                        }}>
+                            {entry.media.posterUrl && (
+                                <Link to={`/media/${entry.media.id}`} style={{ flexShrink: 0 }}>
+                                    <div style={{
+                                        width: 80, aspectRatio: '2/3',
+                                        border: '2px solid var(--color-border)',
+                                        boxShadow: '3px 3px 0px var(--color-border)',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <img src={entry.media.posterUrl} alt={entry.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                </Link>
+                            )}
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                                        <Link to={`/media/${entry.media.id}`} style={{ color: 'var(--color-text)', textDecoration: 'none' }}>
+                                            {entry.media.title} {entry.media.releaseYear && <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: '1rem' }}>({entry.media.releaseYear})</span>}
+                                        </Link>
+                                    </h3>
+                                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                        {entry.rating !== null && (
+                                            <div style={{ color: '#fbbf24', display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                <Star fill="#fbbf24" size={14} />
+                                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{entry.rating}</span>
+                                            </div>
+                                        )}
+                                        {entry.liked && <Heart size={14} fill="#f43f5e" color="#f43f5e" />}
+                                    </div>
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600, marginBottom: 16 }}>
+                                    REVIEWED ON {new Date(entry.watchedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase()}
+                                </div>
+                                <p style={{ fontSize: '1rem', lineHeight: 1.6 }}>
+                                    {entry.review}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )
+        }
+    }
+
     return (
         <div>
             {/* Profile Header Banner */}
@@ -97,7 +230,7 @@ export default function ProfilePage() {
 
             <div style={{ maxWidth: 900, margin: '-60px auto 0', padding: '0 20px 60px', position: 'relative', zIndex: 1 }}>
                 {/* Avatar + Name row */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
+                <div className="profile-header" style={{ display: 'flex', alignItems: 'flex-end', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
                     <div style={{
                         width: 96, height: 96, borderRadius: '50%',
                         border: '4px solid var(--color-bg)',
@@ -132,7 +265,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Stats Row */}
-                <div style={{
+                <div className="profile-stats-grid" style={{
                     display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 36,
                 }}>
                     {STAT_CARDS.map(s => (
@@ -147,11 +280,6 @@ export default function ProfilePage() {
                         </div>
                     ))}
                 </div>
-
-                {/* Activity Heatmap */}
-                {profile.activityData && (
-                    <MonthlyActivityHeatmap activityData={profile.activityData} />
-                )}
 
                 {/* Favorite Films */}
                 {profile.favorites && profile.favorites.length > 0 && (
@@ -233,72 +361,11 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Tab Content */}
-                {activeTab === 'diary' && (
-                    <div className="animate-fade-in">
-                        <h2 style={{ fontWeight: 700, marginBottom: 20, fontSize: '1rem', color: 'var(--color-text-muted)' }}>
-                            RECENT ACTIVITY
-                        </h2>
-                        {profile.recentDiary.length === 0 ? (
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>No diary entries yet.</p>
-                        ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 14 }}>
-                                {profile.recentDiary.map(entry => (
-                                    <Link key={entry.id} to={`/media/${entry.media.id}`} style={{ textDecoration: 'none' }}>
-                                        <div className="card" style={{ overflow: 'hidden' }}>
-                                            <div style={{
-                                                aspectRatio: '2/3', background: 'var(--color-bg-elevated)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                                            }}>
-                                                {entry.media.posterUrl
-                                                    ? <img src={entry.media.posterUrl} alt={entry.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                    : <Film size={28} style={{ color: 'var(--color-text-dim)' }} />
-                                                }
-                                            </div>
-                                            <div style={{ padding: '8px 10px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    {entry.liked && <Heart size={12} fill="#f43f5e" color="#f43f5e" />}
-                                                    {entry.rating && (
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-accent)', fontWeight: 700 }}>
-                                                            ★{entry.rating}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p style={{
-                                                    fontSize: '0.75rem', fontWeight: 600, marginTop: 4, color: 'var(--color-text)',
-                                                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                                                }}>
-                                                    {entry.media.title}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                        {profile._count.diaryEntries > 5 && (
-                            <Link to={isOwn ? '/diary' : `/profile/${username}/diary`} className="btn btn-outline" style={{ marginTop: 24, display: 'inline-flex' }}>
-                                View all entries
-                            </Link>
-                        )}
-                    </div>
-                )}
+                {renderTabContent()}
 
-                {activeTab === 'lists' && (
-                    <div className="animate-fade-in">
-                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-                            {isOwn
-                                ? <><Link to="/lists" style={{ fontWeight: 600 }}>View and manage</Link> your {profile._count.lists} lists.</>
-                                : `${profile.username} has ${profile._count.lists} public lists.`}
-                        </p>
-                    </div>
-                )}
-
-                {activeTab === 'reviews' && (
-                    <div className="animate-fade-in">
-                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-                            {profile._count.reviews} reviews written.
-                        </p>
-                    </div>
+                {/* Activity Heatmap */}
+                {profile.activityData && (
+                    <MonthlyActivityHeatmap activityData={profile.activityData} />
                 )}
             </div>
             <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
