@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "start": "npm run start --workspace=@letterbox/server",
     "dev": "turbo run dev",
     "dev:all": "npm run dev --workspace=apps/server & npm run dev --workspace=apps/web",
     "build": "turbo run build",
