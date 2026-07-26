@@ -33,7 +33,7 @@ router.get("/:username", async (req: Request, res: Response) => {
     }
 
     // Fetch stats
-    const [mediaStats, recentDiary, reviewsCount, favoriteFilms] = await Promise.all([
+    const [mediaStats, recentDiary, reviewsCount, favoriteFilms, activityStats] = await Promise.all([
         prisma.diaryEntry.groupBy({
             by: ["mediaId"],
             where: { userId: user.id },
@@ -75,10 +75,23 @@ router.get("/:username", async (req: Request, res: Response) => {
                     },
                 }
             }
+        }),
+        prisma.diaryEntry.groupBy({
+            by: ["watchedDate"],
+            where: { userId: user.id },
+            _count: { id: true },
         })
     ]);
 
     user._count.reviews = reviewsCount;
+
+    // Convert activity array into a dictionary: { "YYYY-MM-DD": count }
+    const activityData: Record<string, number> = {};
+    for (const stat of activityStats) {
+        // watchedDate is a native Date
+        const dateStr = stat.watchedDate.toISOString().split("T")[0];
+        activityData[dateStr] = stat._count.id;
+    }
 
     res.json({
         ...user,
@@ -87,6 +100,7 @@ router.get("/:username", async (req: Request, res: Response) => {
         },
         recentDiary,
         favorites: favoriteFilms,
+        activityData,
     });
 });
 

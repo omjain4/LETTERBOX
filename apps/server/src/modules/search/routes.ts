@@ -90,33 +90,42 @@ router.get("/", async (req: Request, res: Response) => {
         const queryStr = q.trim();
         const typeStr = type as string | undefined;
 
-        // YouTube-specific: call YouTube API directly
+        let finalResults: any[] = [];
+        let totalResults = 0;
+
         if (typeStr === "YOUTUBE_VIDEO") {
-            const youtubeResults = await searchYouTube(queryStr, take);
-            res.json({
-                data: youtubeResults,
-                query: queryStr,
-                pagination: {
-                    page: pageNum,
-                    limit: take,
-                    total: youtubeResults.length,
-                    totalPages: 1,
-                },
-            });
-            return;
+            // Only YouTube
+            finalResults = await searchYouTube(queryStr, take);
+            totalResults = finalResults.length;
+        } else if (!typeStr || typeStr === "ALL") {
+            // Combine Local and YouTube
+            // Half limit for each to roughly maintain the `take` size, or just fetch `take` for both
+            const youtubeResultsPromise = searchYouTube(queryStr, take);
+            const localResultsPromise = searchLocal(queryStr, undefined, skip, take);
+
+            const [youtubeResults, { results: localResults, total }] = await Promise.all([
+                youtubeResultsPromise,
+                localResultsPromise,
+            ]);
+
+            // Combine them
+            finalResults = [...youtubeResults, ...localResults];
+            totalResults = total + youtubeResults.length;
+        } else {
+            // Specific local type
+            const { results, total } = await searchLocal(queryStr, typeStr, skip, take);
+            finalResults = results;
+            totalResults = total;
         }
 
-        // All other types: search local DB
-        const { results, total } = await searchLocal(queryStr, typeStr, skip, take);
-
         res.json({
-            data: results,
+            data: finalResults,
             query: queryStr,
             pagination: {
                 page: pageNum,
                 limit: take,
-                total,
-                totalPages: Math.ceil(total / take),
+                total: totalResults,
+                totalPages: Math.ceil(totalResults / take) || 1,
             },
         });
     } catch (err) {

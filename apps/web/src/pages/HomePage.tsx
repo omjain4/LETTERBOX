@@ -17,7 +17,7 @@ export default function HomePage() {
             {/* Hero Section */}
             <section style={{
                 minHeight: "75vh",
-                background: "var(--color-bg-dark)",
+                background: "url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat",
                 color: "var(--color-text-invert)",
                 display: "flex",
                 flexDirection: "column",
@@ -26,9 +26,17 @@ export default function HomePage() {
                 borderBottom: "4px solid var(--color-border)",
             }}>
                 <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(17, 17, 17, 0.85)", // dark overlay
+                    zIndex: 0
+                }} />
+                <div style={{
                     maxWidth: 1200,
                     margin: "0 auto",
                     width: "100%",
+                    position: "relative", // Ensures it stays above the overlay
+                    zIndex: 1
                 }} className="animate-fade-in">
                     <div style={{
                         fontSize: "1rem",

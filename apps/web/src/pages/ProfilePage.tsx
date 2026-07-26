@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'
+import MonthlyActivityHeatmap from '../components/MonthlyActivityHeatmap'
 
 interface ProfileData {
     id: string
@@ -36,6 +37,7 @@ interface ProfileData {
         liked: boolean
         media: { id: string; title: string; mediaType: string; posterUrl: string | null }
     }[]
+    activityData: Record<string, number>
 }
 
 export default function ProfilePage() {
@@ -145,6 +147,11 @@ export default function ProfilePage() {
                         </div>
                     ))}
                 </div>
+
+                {/* Activity Heatmap */}
+                {profile.activityData && (
+                    <MonthlyActivityHeatmap activityData={profile.activityData} />
+                )}
 
                 {/* Favorite Films */}
                 {profile.favorites && profile.favorites.length > 0 && (
