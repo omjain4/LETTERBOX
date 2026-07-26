@@ -17,11 +17,10 @@ const app = express();
 
 app.use(
     cors({
-        origin: [
-            "http://localhost:5173", // Vite dev
-            "http://localhost:3000", // Next.js fallback
-            "https://letterbox-web.vercel.app", // Production Vercel App
-        ],
+        origin: function (origin, callback) {
+            // Allow all origins for seamless Vercel preview environments
+            callback(null, true);
+        },
         credentials: true,
     })
 );
