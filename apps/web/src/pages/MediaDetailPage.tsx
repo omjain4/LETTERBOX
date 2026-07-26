@@ -173,15 +173,16 @@ export default function MediaDetailPage() {
                         )}
 
                         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                            {user ? (
+                            {user && (!media.userEntry || !media.userEntry.review) && (
                                 <button
                                     onClick={() => setShowLog(true)}
                                     className="btn btn-primary glow"
                                     style={{ fontSize: '0.9rem', padding: '10px 22px' }}
                                 >
-                                    <Plus size={16} /> Log / Review
+                                    <Plus size={16} /> {media.userEntry ? 'Edit Log / Review' : 'Log / Review'}
                                 </button>
-                            ) : (
+                            )}
+                            {!user && (
                                 <Link to="/login" className="btn btn-primary" style={{ fontSize: '0.9rem', padding: '10px 22px' }}>
                                     <Star size={16} /> Sign in to log
                                 </Link>
