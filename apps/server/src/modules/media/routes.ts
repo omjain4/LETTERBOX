@@ -8,8 +8,9 @@ const router = Router();
 // GET /api/media/:id — Get media by ID with metadata
 router.get("/:id", async (req: Request, res: Response) => {
     try {
+        const id = String(req.params.id);
         let media = await prisma.media.findUnique({
-            where: { id: req.params.id },
+            where: { id: id },
             include: {
                 movieMetadata: true,
                 tvShowMetadata: true,
@@ -26,8 +27,8 @@ router.get("/:id", async (req: Request, res: Response) => {
         });
 
         // Lazy-load YouTube video if it's an external yt- ID and not in DB yet
-        if (!media && req.params.id.startsWith("yt-")) {
-            const videoId = req.params.id.replace("yt-", "");
+        if (!media && id.startsWith("yt-")) {
+            const videoId = id.replace("yt-", "");
             const apiKey = config.youtube.apiKey;
 
             if (apiKey) {
@@ -56,7 +57,7 @@ router.get("/:id", async (req: Request, res: Response) => {
                         // Create in DB
                         media = await prisma.media.create({
                             data: {
-                                id: req.params.id,
+                                id: id,
                                 externalId: videoId,
                                 externalSource: "YOUTUBE",
                                 mediaType: "YOUTUBE_VIDEO",
@@ -83,7 +84,7 @@ router.get("/:id", async (req: Request, res: Response) => {
                         // Refetch to get the includes and counts
                         if (media) {
                             media = await prisma.media.findUnique({
-                                where: { id: req.params.id },
+                                where: { id: id },
                                 include: {
                                     movieMetadata: true,
                                     tvShowMetadata: true,
