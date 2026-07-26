@@ -8,6 +8,8 @@ if (API_BASE && !API_BASE.endsWith("/api") && API_BASE !== "/api") {
     API_BASE = API_BASE.replace(/\/+$/, "") + "/api";
 }
 
+console.log("Using API Base:", API_BASE);
+
 const api = axios.create({
     baseURL: API_BASE,
     headers: { "Content-Type": "application/json" },
