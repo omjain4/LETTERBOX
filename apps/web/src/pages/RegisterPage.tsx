@@ -22,7 +22,9 @@ export default function RegisterPage() {
             await register(username, email, password, displayName || undefined);
             navigate("/");
         } catch (err: any) {
-            setError(err.response?.data?.error || "Registration failed");
+            const apiErr = err.response?.data?.error;
+            const errMsg = typeof apiErr === 'string' ? apiErr : (apiErr?.message || err.message || "Registration failed");
+            setError(errMsg);
         } finally {
             setLoading(false);
         }
