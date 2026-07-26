@@ -7,6 +7,7 @@ export interface ApiError {
 }
 
 export function errorHandler(
+    //good
     err: ApiError | Error,
     _req: Request,
     res: Response,
