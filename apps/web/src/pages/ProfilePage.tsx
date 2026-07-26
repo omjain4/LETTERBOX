@@ -196,6 +196,36 @@ export default function ProfilePage() {
                             ? <><Link to="/lists" style={{ fontWeight: 600 }}>View and manage</Link> your {profile._count.lists} lists.</>
                             : `${profile.username} has ${profile._count.lists} public lists.`}
                     </p>
+                    {[
+                        { label: 'Films', value: profile.stats.totalMediaLogged, icon: Film },
+                        { label: 'Diary', value: profile._count?.diaryEntries ?? 0, icon: BookOpen },
+                        { label: 'Reviews', value: profile._count?.reviews ?? 0, icon: Star },
+                        { label: 'Lists', value: profile._count?.lists ?? 0, icon: List },
+                        { label: 'Followers', value: profile._count?.followers ?? 0, icon: Users, action: () => fetchSocialList('followers') },
+                        { label: 'Following', value: profile._count?.following ?? 0, icon: Users, action: () => fetchSocialList('following') },
+                    ].map(stat => (
+                        <div key={stat.label} style={{
+                            flex: '1 1 120px',
+                            background: 'var(--color-surface)',
+                            border: '2px solid var(--color-border)',
+                            padding: 16,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            textAlign: 'center',
+                            gap: 8,
+                            cursor: stat.action ? 'pointer' : 'default',
+                            transition: 'all 0.1s ease',
+                        }}
+                            onClick={stat.action}
+                            onMouseEnter={(e) => stat.action && (e.currentTarget.style.transform = 'translateY(-2px)')}
+                            onMouseLeave={(e) => stat.action && (e.currentTarget.style.transform = 'translateY(0)')}
+                        >
+                            <stat.icon size={20} />
+                            <span style={{ fontWeight: 800 }}>{stat.value}</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{stat.label}</span>
+                        </div>
+                    ))}
                 </div>
             )
         }

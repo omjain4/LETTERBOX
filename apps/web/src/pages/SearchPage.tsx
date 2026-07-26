@@ -14,17 +14,6 @@ const MEDIA_FILTERS = [
     { label: "Short Films", value: "SHORT_FILM", icon: Clapperboard },
 ];
 
-interface MediaResult {
-    id: string;
-    mediaType: string;
-    title: string;
-    description: string | null;
-    posterUrl: string | null;
-    releaseYear: number | null;
-    genres: string[];
-    avgRating: number;
-    ratingCount: number;
-}
 
 export default function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams();
