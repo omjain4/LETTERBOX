@@ -164,7 +164,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
 // GET /api/diary/:id — Get single diary entry
 router.get("/:id", async (req: AuthRequest, res: Response) => {
     const entry = await prisma.diaryEntry.findFirst({
-        where: { id: req.params.id, userId: req.userId },
+        where: { id: String(String(req.params.id)), userId: req.userId },
         include: {
             media: true,
         },
@@ -184,7 +184,7 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
         const data = updateEntrySchema.parse(req.body);
 
         const existing = await prisma.diaryEntry.findFirst({
-            where: { id: req.params.id, userId: req.userId },
+            where: { id: String(String(req.params.id)), userId: req.userId },
         });
 
         if (!existing) {
@@ -193,7 +193,7 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
         }
 
         const entry = await prisma.diaryEntry.update({
-            where: { id: req.params.id },
+            where: { id: String(String(req.params.id)) },
             data: {
                 ...(data.watchedDate && { watchedDate: new Date(data.watchedDate) }),
                 ...(data.rating !== undefined && { rating: data.rating }),
@@ -226,7 +226,7 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
 // DELETE /api/diary/:id
 router.delete("/:id", async (req: AuthRequest, res: Response) => {
     const existing = await prisma.diaryEntry.findFirst({
-        where: { id: req.params.id, userId: req.userId },
+        where: { id: String(String(req.params.id)), userId: req.userId },
     });
 
     if (!existing) {
@@ -234,7 +234,7 @@ router.delete("/:id", async (req: AuthRequest, res: Response) => {
         return;
     }
 
-    await prisma.diaryEntry.delete({ where: { id: req.params.id } });
+    await prisma.diaryEntry.delete({ where: { id: String(String(req.params.id)) } });
     res.status(204).send();
 });
 

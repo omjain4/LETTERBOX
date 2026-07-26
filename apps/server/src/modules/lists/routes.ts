@@ -108,7 +108,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
 // GET /api/lists/:id — Get list with items
 router.get("/:id", async (req: AuthRequest, res: Response) => {
     const list = await prisma.list.findUnique({
-        where: { id: req.params.id },
+        where: { id: String(String(req.params.id)) },
         include: {
             user: {
                 select: { id: true, username: true, avatarUrl: true },
@@ -148,7 +148,7 @@ router.post("/:id/items", async (req: AuthRequest, res: Response) => {
         const data = addItemSchema.parse(req.body);
 
         const list = await prisma.list.findFirst({
-            where: { id: req.params.id, userId: req.userId },
+            where: { id: String(String(req.params.id)), userId: req.userId },
         });
         if (!list) {
             res.status(404).json({ error: "List not found" });
@@ -159,7 +159,7 @@ router.post("/:id/items", async (req: AuthRequest, res: Response) => {
         let position = data.position;
         if (position === undefined) {
             const lastItem = await prisma.listItem.findFirst({
-                where: { listId: req.params.id },
+                where: { listId: String(String(req.params.id)) },
                 orderBy: { position: "desc" },
             });
             position = lastItem ? lastItem.position + 1 : 0;
@@ -167,7 +167,7 @@ router.post("/:id/items", async (req: AuthRequest, res: Response) => {
 
         const item = await prisma.listItem.create({
             data: {
-                listId: req.params.id,
+                listId: String(String(req.params.id)),
                 mediaId: data.mediaId,
                 position,
                 notes: data.notes,
@@ -195,7 +195,7 @@ router.put("/:id/reorder", async (req: AuthRequest, res: Response) => {
         const data = reorderSchema.parse(req.body);
 
         const list = await prisma.list.findFirst({
-            where: { id: req.params.id, userId: req.userId },
+            where: { id: String(String(req.params.id)), userId: req.userId },
         });
         if (!list) {
             res.status(404).json({ error: "List not found" });
@@ -224,28 +224,28 @@ router.put("/:id/reorder", async (req: AuthRequest, res: Response) => {
 // DELETE /api/lists/:id — Delete list
 router.delete("/:id", async (req: AuthRequest, res: Response) => {
     const list = await prisma.list.findFirst({
-        where: { id: req.params.id, userId: req.userId },
+        where: { id: String(String(req.params.id)), userId: req.userId },
     });
     if (!list) {
         res.status(404).json({ error: "List not found" });
         return;
     }
 
-    await prisma.list.delete({ where: { id: req.params.id } });
+    await prisma.list.delete({ where: { id: String(String(req.params.id)) } });
     res.status(204).send();
 });
 
 // DELETE /api/lists/:listId/items/:itemId — Remove item from list
 router.delete("/:listId/items/:itemId", async (req: AuthRequest, res: Response) => {
     const list = await prisma.list.findFirst({
-        where: { id: req.params.listId, userId: req.userId },
+        where: { id: String(String(req.params.listId)), userId: req.userId },
     });
     if (!list) {
         res.status(404).json({ error: "List not found" });
         return;
     }
 
-    await prisma.listItem.delete({ where: { id: req.params.itemId } });
+    await prisma.listItem.delete({ where: { id: String(String(req.params.itemId)) } });
     res.status(204).send();
 });
 

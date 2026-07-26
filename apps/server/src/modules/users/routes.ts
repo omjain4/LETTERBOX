@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/users/:username — Public profile
 router.get("/:username", async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
-        where: { username: req.params.username },
+        where: { username: String(String(req.params.username)) },
         select: {
             id: true,
             username: true,
@@ -118,7 +118,7 @@ router.get("/:username", async (req: Request, res: Response) => {
 // GET /api/users/:username/diary — User's diary entries (public)
 router.get("/:username/diary", async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
-        where: { username: req.params.username },
+        where: { username: String(String(req.params.username)) },
         select: { id: true },
     });
 

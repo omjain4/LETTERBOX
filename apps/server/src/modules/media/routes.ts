@@ -8,7 +8,7 @@ const router = Router();
 // GET /api/media/:id — Get media by ID with metadata
 router.get("/:id", async (req: Request, res: Response) => {
     try {
-        const id = String(req.params.id);
+        const id = String(String(req.params.));
         let media = await prisma.media.findUnique({
             where: { id: id },
             include: {
