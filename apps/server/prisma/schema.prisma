@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ──────────────────────────────────────────────────
+
+enum MediaType {
+  MOVIE
+  TV_SHOW
+  SHORT_FILM
+  YOUTUBE_VIDEO
+  YOUTUBE_STREAM
+  SONG
+  ALBUM
+}
+
+enum ExternalSource {
+  TMDB
+  YOUTUBE
+  SPOTIFY
+  MUSICBRAINZ
+  MANUAL
+}
+
+enum ActivityType {
+  DIARY_ENTRY
+  REVIEW
+  LIST_CREATED
+  LIST_UPDATED
+  FOLLOW
+  LIKE
+}
+
+// ─── USERS ──────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  diaryEntries  DiaryEntry[]
+  reviews       Review[]
+  lists         List[]
+  comments      Comment[]
+  likes         Like[]
+  activities    ActivityFeed[]
+
+  // Social
+  followers  Follow[] @relation("Following")
+  following  Follow[] @relation("Followers")
+
+  @@map("users")
+}
+
+// ─── MEDIA (Universal Polymorphic Table) ────────────────────
+
+model Media {
+  id             String         @id @default(uuid())
+  mediaType      MediaType
+  externalId     String
+  externalSource ExternalSource
+  title          String
+  description    String?
+  posterUrl      String?
+  backdropUrl    String?
+  releaseYear    Int?
+  genres         String[]       @default([])
+  runtimeMinutes Int?
+  avgRating      Float          @default(0)
+  ratingCount    Int            @default(0)
+  rawMetadata    Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Format-specific metadata (one-to-one)
+  movieMetadata   MovieMetadata?
+  tvShowMetadata  TVShowMetadata?
+  youtubeMetadata YouTubeMetadata?
+  songMetadata    SongMetadata?
+
+  // User actions
+  diaryEntries DiaryEntry[]
+  reviews      Review[]
+  listItems    ListItem[]
+
+  @@unique([externalId, externalSource])
+  @@index([mediaType])
+  @@index([title])
+  @@map("media")
+}
+
+// ─── FORMAT-SPECIFIC METADATA ───────────────────────────────
+
+model MovieMetadata {
+  id       String   @id @default(uuid())
+  mediaId  String   @unique
+  media    Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  director String?
+  cast     String[] @default([])
+  studio   String?
+  tmdbId   String?
+  imdbId   String?
+  tagline  String?
+
+  @@map("movie_metadata")
+}
+
+model TVShowMetadata {
+  id           String  @id @default(uuid())
+  mediaId      String  @unique
+  media        Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  seasonCount  Int?
+  episodeCount Int?
+  status       String?
+  network      String?
+  tmdbId       String?
+
+  @@map("tv_show_metadata")
+}
+
+model YouTubeMetadata {
+  id              String  @id @default(uuid())
+  mediaId         String  @unique
+  media           Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  channelId       String?
+  channelName     String?
+  videoId         String
+  isLiveStream    Boolean @default(false)
+  viewCount       Int?
+  likeCount       Int?
+  durationSeconds Int?
+  thumbnailUrl    String?
+
+  @@map("youtube_metadata")
+}
+
+model SongMetadata {
+  id         String  @id @default(uuid())
+  mediaId    String  @unique
+  media      Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  artist     String?
+  albumName  String?
+  spotifyId  String?
+  durationMs Int?
+  previewUrl String?
+  trackNumber Int?
+
+  @@map("song_metadata")
+}
+
+// ─── DIARY / LOGGING ────────────────────────────────────────
+
+model DiaryEntry {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaId     String
+  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  watchedDate DateTime @db.Date
+  rating      Float?
+  review      String?
+  tags        String[] @default([])
+  liked       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, watchedDate])
+  @@index([mediaId])
+  @@map("diary_entries")
+}
+
+// ─── REVIEWS ────────────────────────────────────────────────
+
+model Review {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaId          String
+  media            Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  rating           Float?
+  body             String
+  containsSpoilers Boolean  @default(false)
+  likeCount        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  comments Comment[]
+  likes    Like[]
+
+  @@index([userId])
+  @@index([mediaId])
+  @@map("reviews")
+}
+
+// ─── LISTS ──────────────────────────────────────────────────
+
+model List {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isPublic    Boolean  @default(true)
+  isRanked    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items ListItem[]
+
+  @@index([userId])
+  @@map("lists")
+}
+
+model ListItem {
+  id       String  @id @default(uuid())
+  listId   String
+  list     List    @relation(fields: [listId], references: [id], onDelete: Cascade)
+  mediaId  String
+  media    Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  position Int     @default(0)
+  notes    String?
+
+  @@unique([listId, mediaId])
+  @@index([listId, position])
+  @@map("list_items")
+}
+
+// ─── SOCIAL ─────────────────────────────────────────────────
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model ActivityFeed {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityType ActivityType
+  targetId     String
+  metadata     Json?
+  createdAt    DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@map("activity_feed")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reviewId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, reviewId])
+  @@map("likes")
+}
+
+// ─── CACHE ──────────────────────────────────────────────────
+
+model ApiCache {
+  id        String   @id @default(uuid())
+  cacheKey  String   @unique
+  data      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+  @@map("api_cache")
+}
