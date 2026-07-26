@@ -15,7 +15,8 @@ async function searchYouTube(query: string, maxResults = 20) {
     url.searchParams.set("part", "snippet");
     url.searchParams.set("q", query);
     url.searchParams.set("type", "video");
-    url.searchParams.set("maxResults", String(maxResults));
+    url.searchParams.set("maxResults", String(50));
+    url.searchParams.set("videoDuration", "long");
     url.searchParams.set("key", apiKey);
 
     const res = await fetch(url.toString());
@@ -25,9 +26,37 @@ async function searchYouTube(query: string, maxResults = 20) {
     }
 
     const data = (await res.json()) as any;
-    if (!data.items) return [];
+    if (!data.items || data.items.length === 0) return [];
 
-    return data.items.map((item: any) => ({
+    // Secondary fetch to enforce exact strict duration > 1 hour
+    const videoIds = data.items.map((item: any) => item.id.videoId).join(",");
+    const detailsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+    detailsUrl.searchParams.set("part", "contentDetails");
+    detailsUrl.searchParams.set("id", videoIds);
+    detailsUrl.searchParams.set("key", apiKey);
+
+    const detailsRes = await fetch(detailsUrl.toString());
+    const detailsData = detailsRes.ok ? await detailsRes.json() : { items: [] };
+    const durationMap = new Map();
+
+    for (const item of (detailsData.items || [])) {
+        let durationSeconds = 0;
+        const durationStr = item.contentDetails?.duration || "";
+        const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+        if (match) {
+            const hours = parseInt(match[1] || "0", 10);
+            const mins = parseInt(match[2] || "0", 10);
+            const secs = parseInt(match[3] || "0", 10);
+            durationSeconds = hours * 3600 + mins * 60 + secs;
+        }
+        durationMap.set(item.id, durationSeconds);
+    }
+
+    const validItems = data.items
+        .filter((item: any) => (durationMap.get(item.id.videoId) || 0) >= 3600)
+        .slice(0, maxResults);
+
+    return validItems.map((item: any) => ({
         id: `yt-${item.id.videoId}`,
         externalId: item.id.videoId,
         mediaType: "YOUTUBE_VIDEO",

@@ -106,12 +106,12 @@ export default function HomePage() {
             }}>
                 {/* How It Works */}
                 <div style={{
-                    padding: "60px 40px",
+                    padding: "clamp(30px, 5vw, 60px) clamp(20px, 5vw, 40px)",
                     background: "var(--color-bg)",
                     borderRight: "4px solid var(--color-border)",
                 }}>
                     <div style={{ color: "var(--color-primary)", fontWeight: 700, letterSpacing: "0.1em", fontSize: "0.9rem", marginBottom: 8, textTransform: "uppercase" }}>Process</div>
-                    <h2 style={{ fontSize: "3rem", marginBottom: 40, lineHeight: 1 }}>HOW IT WORKS</h2>
+                    <h2 style={{ fontSize: "clamp(2rem, 8vw, 3rem)", marginBottom: 40, lineHeight: 1 }}>HOW IT WORKS</h2>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
                         {[
@@ -135,11 +135,11 @@ export default function HomePage() {
 
                 {/* Categories */}
                 <div style={{
-                    padding: "60px 40px",
+                    padding: "clamp(30px, 5vw, 60px) clamp(20px, 5vw, 40px)",
                     background: "white",
                 }}>
                     <div style={{ color: "var(--color-primary)", fontWeight: 700, letterSpacing: "0.1em", fontSize: "0.9rem", marginBottom: 8, textTransform: "uppercase" }}>Categories</div>
-                    <h2 style={{ fontSize: "3rem", marginBottom: 40, lineHeight: 1 }}>SUPPORTED MEDIA</h2>
+                    <h2 style={{ fontSize: "clamp(2rem, 8vw, 3rem)", marginBottom: 40, lineHeight: 1 }}>SUPPORTED MEDIA</h2>
 
                     <div style={{
                         display: "grid",

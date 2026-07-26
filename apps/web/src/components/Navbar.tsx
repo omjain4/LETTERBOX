@@ -30,18 +30,18 @@ export default function Navbar() {
             <div style={{
                 maxWidth: 1200,
                 margin: "0 auto",
-                padding: "0 20px",
+                padding: "0 clamp(10px, 3vw, 20px)",
                 height: 72, // taller for brutalist feel
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: 24,
+                gap: "clamp(8px, 2vw, 24px)",
             }}>
                 {/* Logo */}
                 <Link to="/" style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 12,
+                    gap: "clamp(6px, 1.5vw, 12px)",
                     textDecoration: "none",
                     flexShrink: 0,
                     color: "var(--color-text-invert)",
@@ -53,11 +53,11 @@ export default function Navbar() {
                         boxShadow: "2px 2px 0px var(--color-border)",
                         display: "flex"
                     }}>
-                        <Film size={24} strokeWidth={3} style={{ color: "var(--color-text-invert)" }} />
+                        <Film size={20} strokeWidth={3} style={{ color: "var(--color-text-invert)" }} />
                     </div>
                     <span style={{
                         fontFamily: "var(--font-display)",
-                        fontSize: "1.75rem",
+                        fontSize: "clamp(1.1rem, 4vw, 1.75rem)",
                         fontWeight: 700,
                         letterSpacing: "0.05em",
                         textTransform: "uppercase",
@@ -70,12 +70,13 @@ export default function Navbar() {
                 <form onSubmit={handleSearch} style={{
                     flex: 1,
                     maxWidth: 500,
+                    minWidth: 0,
                     position: "relative",
                     display: "flex",
                 }}>
                     <Search size={18} style={{
                         position: "absolute",
-                        left: 16,
+                        left: "clamp(8px, 2vw, 16px)",
                         top: "50%",
                         transform: "translateY(-50%)",
                         color: "var(--color-text)",
@@ -83,18 +84,22 @@ export default function Navbar() {
                     }} />
                     <input
                         type="text"
-                        placeholder="SEARCH MOVIES, SHOWS, SONGS..."
+                        placeholder="SEARCH..." // Shorter for mobile
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input"
                         style={{
-                            paddingLeft: 44,
+                            paddingLeft: "clamp(32px, 8vw, 44px)",
+                            paddingRight: 8,
                             background: "var(--color-bg)",
                             borderRadius: 0,
                             border: "2px solid var(--color-border)",
                             boxShadow: "4px 4px 0px var(--color-border)",
                             fontWeight: 600,
-                            height: 48,
+                            height: 44,
+                            width: "100%",
+                            minWidth: 0,
+                            fontSize: "1rem"
                         }}
                     />
                 </form>
