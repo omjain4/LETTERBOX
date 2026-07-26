@@ -9,6 +9,7 @@ import { useAuth } from '../stores/auth-context'
 import MonthlyActivityHeatmap from '../components/MonthlyActivityHeatmap'
 import { UserCard, type UserData } from '../components/UserCard'
 import EditProfileModal from '../components/EditProfileModal'
+import ConfirmModal from '../components/ConfirmModal'
 
 interface ProfileData {
     id: string
@@ -104,6 +105,7 @@ export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<'diary' | 'lists' | 'reviews'>('diary')
     const [isSubmittingFollow, setIsSubmittingFollow] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
+    const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; action: () => void } | null>(null)
     const [modalConfig, setModalConfig] = useState<{ title: string, users: UserData[] } | null>(null);
     const [loadingModal, setLoadingModal] = useState(false);
 
@@ -515,6 +517,15 @@ export default function ProfilePage() {
                 )}
             </div>
 
+
+            {confirmAction && (
+                <ConfirmModal
+                    title={confirmAction.title}
+                    message={confirmAction.message}
+                    onConfirm={confirmAction.action}
+                    onCancel={() => setConfirmAction(null)}
+                />
+            )}
 
             {showEditProfile && (
                 <EditProfileModal

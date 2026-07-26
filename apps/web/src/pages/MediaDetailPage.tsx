@@ -197,7 +197,7 @@ export default function MediaDetailPage() {
                         borderLeft: '4px solid var(--color-primary)', display: 'flex', alignItems: 'center', gap: 12
                     }}>
                         <div style={{ background: 'var(--color-primary)', borderRadius: '50%', padding: 4, display: 'flex' }}>
-                            <Icon size={12} color="#fff" />
+                            <Star size={12} color="#fff" />
                         </div>
                         <div style={{ flex: 1 }}>
                             <strong style={{ fontSize: '0.9rem' }}>You Logged this on {new Date(media.userEntry.watchedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</strong>

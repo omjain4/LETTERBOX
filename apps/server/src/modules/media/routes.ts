@@ -252,6 +252,7 @@ router.get("/:id", optionalAuthMiddleware, async (req: AuthRequest, res: Respons
 
         res.json({
             ...media,
+            userEntry,
             movieMetadata: undefined,
             tvShowMetadata: undefined,
             youtubeMetadata: undefined,
