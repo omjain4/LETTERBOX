@@ -6,8 +6,9 @@ const router = Router();
 
 // GET /api/users/:username — Public profile
 router.get("/:username", async (req: Request, res: Response) => {
+    const username = String(req.params.username);
     const user = await prisma.user.findUnique({
-        where: { username: req.params.username },
+        where: { username },
         select: {
             id: true,
             username: true,
@@ -93,8 +94,6 @@ router.get("/:username", async (req: Request, res: Response) => {
         })
     ]);
 
-    user._count.reviews = reviewsCount;
-
     // Convert activity array into a dictionary: { "YYYY-MM-DD": count }
     const activityData: Record<string, number> = {};
     for (const stat of activityStats) {
@@ -105,6 +104,7 @@ router.get("/:username", async (req: Request, res: Response) => {
 
     res.json({
         ...user,
+        _count: { ...user._count, reviews: reviewsCount },
         stats: {
             totalMediaLogged: mediaStats.length,
         },
@@ -117,8 +117,9 @@ router.get("/:username", async (req: Request, res: Response) => {
 
 // GET /api/users/:username/diary — User's diary entries (public)
 router.get("/:username/diary", async (req: Request, res: Response) => {
+    const username = String(req.params.username);
     const user = await prisma.user.findUnique({
-        where: { username: req.params.username },
+        where: { username },
         select: { id: true },
     });
 
