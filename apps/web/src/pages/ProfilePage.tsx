@@ -59,48 +59,60 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true)
 
 
-    const handleUnlike = async (id: string, e: React.MouseEvent) => {
+    const handleUnlike = (id: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!confirm('Remove from favorites?')) return;
-        try {
-            await api.patch(`/diary/${id}`, { liked: false });
-            setProfile(p => {
-                if (!p) return p;
-                const copy = { ...p };
-                copy.favorites = copy.favorites.filter(entry => entry.id !== id);
-                if (copy.recentDiary) {
-                    const idx = copy.recentDiary.findIndex(e => e.id === id);
-                    if (idx > -1) copy.recentDiary[idx].liked = false;
+        setConfirmAction({
+            title: 'Remove from Favorites',
+            message: 'Are you sure you want to remove this from your favorites?',
+            action: async () => {
+                try {
+                    await api.patch(`/diary/${id}`, { liked: false });
+                    setProfile(p => {
+                        if (!p) return p;
+                        const copy = { ...p };
+                        copy.favorites = copy.favorites.filter(entry => entry.id !== id);
+                        if (copy.recentDiary) {
+                            const idx = copy.recentDiary.findIndex(e => e.id === id);
+                            if (idx > -1) copy.recentDiary[idx].liked = false;
+                        }
+                        if (copy.userReviews) {
+                            const rIdx = copy.userReviews.findIndex(e => e.id === id);
+                            if (rIdx > -1) copy.userReviews[rIdx].liked = false;
+                        }
+                        return copy;
+                    });
+                } catch (e) {
+                    alert('Failed to remove from favorites.');
                 }
-                if (copy.userReviews) {
-                    const rIdx = copy.userReviews.findIndex(e => e.id === id);
-                    if (rIdx > -1) copy.userReviews[rIdx].liked = false;
-                }
-                return copy;
-            });
-        } catch (e) {
-            alert('Failed to remove from favorites.');
-        }
+                setConfirmAction(null);
+            }
+        });
     }
-    const handleDeleteEntry = async (id: string, type: 'diary' | 'review' | 'favorite') => {
-        if (!confirm('Are you sure you want to delete this?')) return;
-        try {
-            await api.delete(`/diary/${id}`);
-            setProfile(p => {
-                if (!p) return p;
-                const copy = { ...p };
-                if (type === 'diary') copy.recentDiary = copy.recentDiary.filter(e => e.id !== id);
-                if (type === 'favorite') copy.favorites = copy.favorites.filter(e => e.id !== id);
-                if (type === 'review' && copy.userReviews) {
-                    copy.userReviews = copy.userReviews.filter(e => e.id !== id);
+    const handleDeleteEntry = (id: string, type: 'diary' | 'review' | 'favorite') => {
+        setConfirmAction({
+            title: 'Delete Entry',
+            message: 'Are you sure you want to delete this entry? This action cannot be undone.',
+            action: async () => {
+                try {
+                    await api.delete(`/diary/${id}`);
+                    setProfile(p => {
+                        if (!p) return p;
+                        const copy = { ...p };
+                        if (type === 'diary') copy.recentDiary = copy.recentDiary.filter(e => e.id !== id);
+                        if (type === 'favorite') copy.favorites = copy.favorites.filter(e => e.id !== id);
+                        if (type === 'review' && copy.userReviews) {
+                            copy.userReviews = copy.userReviews.filter(e => e.id !== id);
+                        }
+                        copy._count.diaryEntries = copy._count.diaryEntries - 1;
+                        return copy;
+                    });
+                } catch (e) {
+                    alert('Failed to delete entry.');
                 }
-                copy._count.diaryEntries = copy._count.diaryEntries - 1;
-                return copy;
-            });
-        } catch (e) {
-            alert('Failed to delete entry.');
-        }
+                setConfirmAction(null);
+            }
+        });
     }
     const [activeTab, setActiveTab] = useState<'diary' | 'lists' | 'reviews'>('diary')
     const [isSubmittingFollow, setIsSubmittingFollow] = useState(false)

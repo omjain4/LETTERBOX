@@ -26,6 +26,7 @@ interface MediaDetail {
         watchedDate: string
         rating: number | null
         liked: boolean
+        review: string | null
     }
     _count: { diaryEntries: number; reviews: number; listItems: number }
 }
@@ -192,16 +193,26 @@ export default function MediaDetailPage() {
                 {/* User Logged Banner */}
                 {media.userEntry && (
                     <div style={{
-                        marginTop: 24, padding: '12px 20px',
-                        background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-lg)',
-                        borderLeft: '4px solid var(--color-primary)', display: 'flex', alignItems: 'center', gap: 12
+                        marginTop: 24, padding: '16px 20px',
+                        background: 'var(--color-bg-card)',
+                        border: '2px solid var(--color-border)',
+                        borderLeft: '4px solid var(--color-primary)',
+                        boxShadow: '3px 3px 0px var(--color-border)',
+                        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap'
                     }}>
-                        <div style={{ background: 'var(--color-primary)', borderRadius: '50%', padding: 4, display: 'flex' }}>
-                            <Star size={12} color="#fff" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ background: 'var(--color-primary)', padding: '4px 10px', fontWeight: 800, fontSize: '0.7rem', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                ✓ Logged
+                            </div>
+                            {media.userEntry.review && (
+                                <div style={{ background: '#059669', padding: '4px 10px', fontWeight: 800, fontSize: '0.7rem', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    ✓ Reviewed
+                                </div>
+                            )}
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <strong style={{ fontSize: '0.9rem' }}>You Logged this on {new Date(media.userEntry.watchedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</strong>
-                            {media.userEntry.rating && <span style={{ marginLeft: 12, color: '#fbbf24', fontSize: '0.85rem' }}>★ {media.userEntry.rating}</span>}
+                        <div style={{ flex: 1, fontSize: '0.9rem' }}>
+                            <strong>on {new Date(media.userEntry.watchedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</strong>
+                            {media.userEntry.rating && <span style={{ marginLeft: 12, color: '#fbbf24', fontWeight: 700 }}>★ {media.userEntry.rating}</span>}
                         </div>
                         {media.userEntry.liked && <Heart fill="#f43f5e" color="#f43f5e" size={16} />}
                     </div>
