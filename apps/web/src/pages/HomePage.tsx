@@ -39,7 +39,7 @@ export default function HomePage() {
                     zIndex: 1
                 }} className="animate-fade-in">
                     <div style={{
-                        fontSize: "1rem",
+                        fontSize: "clamp(0.8rem, 3vw, 1rem)",
                         fontWeight: 700,
                         color: "var(--color-primary)",
                         letterSpacing: "0.15em",
@@ -50,11 +50,11 @@ export default function HomePage() {
                     </div>
 
                     <h1 style={{
-                        fontSize: "clamp(4rem, 10vw, 8rem)",
+                        fontSize: "clamp(2.5rem, 15vw, 8rem)",
                         fontWeight: 800,
                         lineHeight: 0.9,
                         letterSpacing: "-0.02em",
-                        margin: "0 0 24px -6px", // align with edge
+                        margin: "0 0 24px -2px", // align with edge
                         color: "var(--color-text-invert)",
                     }}>
                         TRACK<br />
@@ -101,7 +101,7 @@ export default function HomePage() {
             {/* Split Process & Latest Section */}
             <section style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))",
                 borderBottom: "4px solid var(--color-border)",
             }}>
                 {/* How It Works */}

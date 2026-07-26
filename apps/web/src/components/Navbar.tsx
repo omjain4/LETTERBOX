@@ -153,12 +153,18 @@ export default function Navbar() {
             {/* Mobile Dropdown */}
             {mobileMenuOpen && (
                 <div style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    width: "100%",
                     padding: "20px",
                     borderTop: "4px solid var(--color-border)",
+                    borderBottom: "4px solid var(--color-border)",
                     background: "var(--color-bg-dark)",
                     display: "flex",
                     flexDirection: "column",
                     gap: 12,
+                    zIndex: 45,
                 }}>
                     {user ? (
                         <>
