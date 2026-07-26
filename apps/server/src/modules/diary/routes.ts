@@ -37,27 +37,51 @@ router.post("/", async (req: AuthRequest, res: Response) => {
             return;
         }
 
-        const entry = await prisma.diaryEntry.create({
-            data: {
+        const watchedDate = new Date(data.watchedDate);
+
+        // Check if user already logged this media on this date
+        const existingEntry = await prisma.diaryEntry.findFirst({
+            where: {
                 userId: req.userId!,
                 mediaId: data.mediaId,
-                watchedDate: new Date(data.watchedDate),
-                rating: data.rating,
-                review: data.review,
-                tags: data.tags || [],
-                liked: data.liked || false,
-            },
-            include: {
-                media: {
-                    select: {
-                        id: true,
-                        title: true,
-                        mediaType: true,
-                        posterUrl: true,
+                watchedDate,
+            }
+        });
+
+        let entry;
+        if (existingEntry) {
+            entry = await prisma.diaryEntry.update({
+                where: { id: existingEntry.id },
+                data: {
+                    rating: data.rating !== undefined ? data.rating : existingEntry.rating,
+                    review: data.review !== undefined ? data.review : existingEntry.review,
+                    tags: data.tags !== undefined ? data.tags : existingEntry.tags,
+                    liked: data.liked !== undefined ? data.liked : existingEntry.liked,
+                },
+                include: {
+                    media: {
+                        select: { id: true, title: true, mediaType: true, posterUrl: true },
                     },
                 },
-            },
-        });
+            });
+        } else {
+            entry = await prisma.diaryEntry.create({
+                data: {
+                    userId: req.userId!,
+                    mediaId: data.mediaId,
+                    watchedDate,
+                    rating: data.rating,
+                    review: data.review,
+                    tags: data.tags || [],
+                    liked: data.liked || false,
+                },
+                include: {
+                    media: {
+                        select: { id: true, title: true, mediaType: true, posterUrl: true },
+                    },
+                },
+            });
+        }
 
         // Update media average rating if rating provided
         if (data.rating) {

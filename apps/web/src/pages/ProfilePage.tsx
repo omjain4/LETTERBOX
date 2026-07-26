@@ -29,6 +29,13 @@ interface ProfileData {
         liked: boolean
         media: { id: string; title: string; mediaType: string; posterUrl: string | null }
     }[]
+    favorites: {
+        id: string
+        watchedDate: string
+        rating: number | null
+        liked: boolean
+        media: { id: string; title: string; mediaType: string; posterUrl: string | null }
+    }[]
 }
 
 export default function ProfilePage() {
@@ -138,6 +145,57 @@ export default function ProfilePage() {
                         </div>
                     ))}
                 </div>
+
+                {/* Favorite Films */}
+                {profile.favorites && profile.favorites.length > 0 && (
+                    <div style={{ marginBottom: 40 }}>
+                        <h2 style={{ fontWeight: 700, marginBottom: 16, fontSize: '1rem', color: 'var(--color-text-muted)' }}>
+                            FAVORITE PICKS
+                        </h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                            {profile.favorites.map((entry, idx) => (
+                                <Link key={idx} to={`/media/${entry.media.id}`} style={{ textDecoration: 'none' }}>
+                                    <div style={{
+                                        aspectRatio: '2/3', background: 'var(--color-bg-card)',
+                                        border: '3px solid var(--color-border)',
+                                        borderRadius: 'var(--radius-none)',
+                                        overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: '4px 4px 0px var(--color-border)', position: 'relative',
+                                        transition: 'transform 0.1s, box-shadow 0.1s',
+                                    }}>
+                                        {entry.media.posterUrl ? (
+                                            <img src={entry.media.posterUrl} alt={entry.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <Film size={28} style={{ color: 'var(--color-text-dim)' }} />
+                                        )}
+                                        <div style={{
+                                            position: 'absolute', top: 8, right: 8,
+                                            background: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: '50%',
+                                        }}>
+                                            <Heart size={14} fill="#f43f5e" color="#f43f5e" />
+                                        </div>
+                                    </div>
+                                    <p style={{
+                                        fontSize: '0.8rem', fontWeight: 700, marginTop: 8, color: 'var(--color-text)',
+                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                    }}>
+                                        {entry.media.title}
+                                    </p>
+                                </Link>
+                            ))}
+                            {[...Array(Math.max(0, 4 - profile.favorites.length))].map((_, i) => (
+                                <div key={`empty-${i}`} style={{
+                                    aspectRatio: '2/3', background: 'var(--color-bg-elevated)',
+                                    border: '3px dashed var(--color-border)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    opacity: 0.5
+                                }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Empty</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Tabs */}
                 <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-border)', marginBottom: 28 }}>
