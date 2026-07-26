@@ -1,12 +1,14 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../../config/database.js";
 import { config } from "../../config/env.js";
-import { authMiddleware, AuthRequest } from "../../middleware/auth.js";
+import { authMiddleware, optionalAuthMiddleware, AuthRequest } from "../../middleware/auth.js";
 
 const router = Router();
 
 // GET /api/media/:id — Get media by ID with metadata
-router.get("/:id", async (req: Request, res: Response) => {
+
+router.get("/:id", optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
+
     try {
         const id = String(req.params.id);
         let media = await prisma.media.findUnique({
@@ -230,7 +232,17 @@ router.get("/:id", async (req: Request, res: Response) => {
             return;
         }
 
+
+        let userEntry = null;
+        if (req.userId) {
+            userEntry = await prisma.diaryEntry.findFirst({
+                where: { userId: req.userId, mediaId: id },
+                orderBy: { watchedDate: "desc" }
+            });
+        }
+        
         // Build normalized response
+
         const metadata =
             media.movieMetadata ||
             media.tvShowMetadata ||

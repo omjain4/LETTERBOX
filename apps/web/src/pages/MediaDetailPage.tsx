@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
-    Film, Tv, Music, PlayCircle, Star, Calendar, Plus,
-     Loader2, Clock, List
+    Film, Tv, Music, PlayCircle, Star, Calendar, Plus, Heart,
+    Loader2, Clock, List
 } from 'lucide-react'
 import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'
@@ -21,6 +21,12 @@ interface MediaDetail {
     avgRating: number
     ratingCount: number
     metadata: Record<string, any> | null
+    userEntry?: {
+        id: string
+        watchedDate: string
+        rating: number | null
+        liked: boolean
+    }
     _count: { diaryEntries: number; reviews: number; listItems: number }
 }
 
@@ -182,6 +188,24 @@ export default function MediaDetailPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* User Logged Banner */}
+                {media.userEntry && (
+                    <div style={{
+                        marginTop: 24, padding: '12px 20px',
+                        background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-lg)',
+                        borderLeft: '4px solid var(--color-primary)', display: 'flex', alignItems: 'center', gap: 12
+                    }}>
+                        <div style={{ background: 'var(--color-primary)', borderRadius: '50%', padding: 4, display: 'flex' }}>
+                            <Icon size={12} color="#fff" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <strong style={{ fontSize: '0.9rem' }}>You Logged this on {new Date(media.userEntry.watchedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</strong>
+                            {media.userEntry.rating && <span style={{ marginLeft: 12, color: '#fbbf24', fontSize: '0.85rem' }}>★ {media.userEntry.rating}</span>}
+                        </div>
+                        {media.userEntry.liked && <Heart fill="#f43f5e" color="#f43f5e" size={16} />}
+                    </div>
+                )}
 
                 {/* Stats Bar */}
                 <div style={{

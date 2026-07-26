@@ -223,6 +223,57 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
     }
 });
 
+
+// PATCH /api/diary/:id — Update specific fields (e.g., liked status)
+router.patch("/:id", async (req: AuthRequest, res: Response) => {
+    try {
+        const id = req.params.id;
+        const existing = await prisma.diaryEntry.findFirst({
+            where: { id: id, userId: req.userId }
+        });
+
+        if (!existing) {
+            res.status(404).json({ error: "Diary entry not found" });
+            return;
+        }
+
+        const validFields: any = {};
+        if (req.body.liked !== undefined) validFields.liked = req.body.liked;
+        // Optionally allow rating and review patches here too
+        if (req.body.rating !== undefined) validFields.rating = req.body.rating;
+        if (req.body.review !== undefined) validFields.review = req.body.review;
+
+        const updated = await prisma.diaryEntry.update({
+            where: { id },
+            data: validFields,
+            include: {
+                media: { select: { id: true, title: true, mediaType: true, posterUrl: true } }
+            }
+        });
+
+        // If rating was patched, recalculate avg
+        if (req.body.rating !== undefined) {
+            const agg = await prisma.diaryEntry.aggregate({
+                where: { mediaId: existing.mediaId, rating: { not: null } },
+                _avg: { rating: true },
+                _count: { rating: true },
+            });
+            await prisma.media.update({
+                where: { id: existing.mediaId },
+                data: {
+                    avgRating: agg._avg.rating || 0,
+                    ratingCount: agg._count.rating,
+                },
+            });
+        }
+
+        res.json(updated);
+    } catch (e) {
+        res.status(500).json({ error: "Failed to update diary entry" });
+    }
+});
+
+
 // DELETE /api/diary/:id
 router.delete("/:id", async (req: AuthRequest, res: Response) => {
     const existing = await prisma.diaryEntry.findFirst({
@@ -239,50 +290,3 @@ router.delete("/:id", async (req: AuthRequest, res: Response) => {
 });
 
 export default router;
-
-
-// DELETE /api/diary/:id — Delete a diary entry
-router.delete("/:id", async (req: AuthRequest, res: Response) => {
-    try {
-        const id = req.params.id;
-        
-        // Find existing to ensure they own it
-        const entry = await prisma.diaryEntry.findUnique({
-            where: { id }
-        });
-        
-        if (!entry) {
-            res.status(404).json({ error: "Diary entry not found" });
-            return;
-        }
-        
-        if (entry.userId !== req.userId) {
-            res.status(403).json({ error: "Unauthorized" });
-            return;
-        }
-
-        await prisma.diaryEntry.delete({
-            where: { id }
-        });
-
-        // Recalculate average rating if it had a rating
-        if (entry.rating) {
-            const agg = await prisma.diaryEntry.aggregate({
-                where: { mediaId: entry.mediaId, rating: { not: null } },
-                _avg: { rating: true },
-                _count: { rating: true },
-            });
-            await prisma.media.update({
-                where: { id: entry.mediaId },
-                data: {
-                    avgRating: agg._avg.rating || 0,
-                    ratingCount: agg._count.rating,
-                },
-            });
-        }
-        
-        res.status(204).send();
-    } catch (err: any) {
-        res.status(500).json({ error: "Failed to delete diary entry" });
-    }
-});

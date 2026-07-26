@@ -57,6 +57,31 @@ export default function ProfilePage() {
     const [profile, setProfile] = useState<ProfileData | null>(null)
     const [loading, setLoading] = useState(true)
 
+
+    const handleUnlike = async (id: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Remove from favorites?')) return;
+        try {
+            await api.patch(`/diary/${id}`, { liked: false });
+            setProfile(p => {
+                if (!p) return p;
+                const copy = { ...p };
+                copy.favorites = copy.favorites.filter(entry => entry.id !== id);
+                if (copy.recentDiary) {
+                    const idx = copy.recentDiary.findIndex(e => e.id === id);
+                    if (idx > -1) copy.recentDiary[idx].liked = false;
+                }
+                if (copy.userReviews) {
+                    const rIdx = copy.userReviews.findIndex(e => e.id === id);
+                    if (rIdx > -1) copy.userReviews[rIdx].liked = false;
+                }
+                return copy;
+            });
+        } catch (e) {
+            alert('Failed to remove from favorites.');
+        }
+    }
     const handleDeleteEntry = async (id: string, type: 'diary' | 'review' | 'favorite') => {
         if (!confirm('Are you sure you want to delete this?')) return;
         try {
@@ -378,9 +403,9 @@ export default function ProfilePage() {
                         )}
                     </div>
                     {isOwn && (
-                        <Link to="/settings" className="btn btn-outline" style={{ fontSize: '0.85rem', alignSelf: 'flex-start', marginTop: 8 }}>
+                        <button onClick={() => setShowEditProfile(true)} className="btn btn-outline" style={{ fontSize: '0.85rem', alignSelf: 'flex-start', marginTop: 8 }}>
                             Edit Profile
-                        </Link>
+                        </button>
                     )}
                 </div>
 
@@ -426,7 +451,8 @@ export default function ProfilePage() {
                                         <div style={{
                                             position: 'absolute', top: 8, right: 8,
                                             background: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: '50%',
-                                        }}>
+                                            cursor: isOwn ? 'pointer' : 'default',
+                                        }} onClick={(e) => { if (isOwn) { e.preventDefault(); e.stopPropagation(); handleUnlike(entry.id, e); } }}>
                                             <Heart size={14} fill="#f43f5e" color="#f43f5e" />
                                         </div>
                                     </div>
