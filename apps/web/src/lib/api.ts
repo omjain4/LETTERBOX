@@ -1,6 +1,6 @@
 import axios from "axios";
 
-let API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "https://letterbox-5ajz.onrender.com/api" : "/api");
+let API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "https://letterbox-production-5ec3.up.railway.app/api" : "/api");
 if (API_BASE && !API_BASE.startsWith("http") && !API_BASE.startsWith("/")) {
     API_BASE = "https://" + API_BASE;
 }
