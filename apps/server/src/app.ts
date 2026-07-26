@@ -19,7 +19,8 @@ app.use(
     cors({
         origin: [
             "http://localhost:5173",
-            "https://letterbox-web.vercel.app"
+            "https://letterbox-web.vercel.app",
+            /^https:\/\/.*\.vercel\.app$/
         ],
         credentials: true,
     })
