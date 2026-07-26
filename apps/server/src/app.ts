@@ -20,6 +20,7 @@ app.use(
         origin: [
             "http://localhost:5173", // Vite dev
             "http://localhost:3000", // Next.js fallback
+            "https://letterbox-web.vercel.app", // Production Vercel App
         ],
         credentials: true,
     })
