@@ -227,7 +227,7 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
 // PATCH /api/diary/:id — Update specific fields (e.g., liked status)
 router.patch("/:id", async (req: AuthRequest, res: Response) => {
     try {
-        const id = req.params.id;
+        const id = req.params.id as string;
         const existing = await prisma.diaryEntry.findFirst({
             where: { id: id, userId: req.userId }
         });

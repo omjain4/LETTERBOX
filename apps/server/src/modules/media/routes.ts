@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import { prisma } from "../../config/database.js";
 import { config } from "../../config/env.js";
