@@ -1,54 +1,13 @@
-import { Router, Request, Response } from "express";
-import { prisma } from "../../config/database.js";
-import { config } from "../../config/env.js";
+const fs = require('fs');
+let code = fs.readFileSync('apps/server/src/modules/search/routes.ts', 'utf8');
 
-const router = Router();
-
-// ─── YouTube API Search ─────────────────────────────────────
-
-async function searchYouTube(query: string, maxResults = 20) {
-    const apiKey = config.youtube.apiKey;
-    if (!apiKey) return [];
-
-    const url = new URL("https://www.googleapis.com/youtube/v3/search");
-    url.searchParams.set("part", "snippet");
-    url.searchParams.set("q", query);
-    url.searchParams.set("type", "video");
-    url.searchParams.set("maxResults", String(maxResults));
-    url.searchParams.set("key", apiKey);
-
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-        console.error("YouTube API error:", res.status, await res.text());
-        return [];
-    }
-
-    const data = (await res.json()) as any;
-    if (!data.items) return [];
-
-    return data.items.map((item: any) => ({
-        id: `yt-${item.id.videoId}`,
-        externalId: item.id.videoId,
-        mediaType: "YOUTUBE_VIDEO",
-        title: item.snippet.title,
-        description: item.snippet.description,
-        posterUrl: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url || null,
-        releaseYear: new Date(item.snippet.publishedAt).getFullYear(),
-        channelTitle: item.snippet.channelTitle,
-        publishedAt: item.snippet.publishedAt,
-        avgRating: null,
-        ratingCount: 0,
-        _external: true, // flag: not in our DB yet
-    }));
-}
-
-
+const tmdbApi = `
 async function searchTMDB(query: string, type: "MOVIE" | "TV_SHOW", maxResults = 20) {
     const apiKey = config.tmdb.apiKey;
     if (!apiKey) return [];
 
     const endpoint = type === "MOVIE" ? "/search/movie" : "/search/tv";
-    const url = new URL(`${config.tmdb.baseUrl}${endpoint}`);
+    const url = new URL(\`\${config.tmdb.baseUrl}\${endpoint}\`);
     url.searchParams.set("api_key", apiKey);
     url.searchParams.set("query", query);
     url.searchParams.set("page", "1");
@@ -60,21 +19,21 @@ async function searchTMDB(query: string, type: "MOVIE" | "TV_SHOW", maxResults =
     if (!data.results) return [];
 
     return data.results.slice(0, maxResults).map((item: any) => ({
-        id: `tmdb-${item.id}`,
+        id: \`tmdb-\${item.id}\`,
         externalId: String(item.id),
         mediaType: type,
         title: type === "MOVIE" ? item.title : item.name,
         description: item.overview || null,
-        posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+        posterUrl: item.poster_path ? \`https://image.tmdb.org/t/p/w500\${item.poster_path}\` : null,
         releaseYear: item.release_date ? parseInt(item.release_date.split("-")[0]) : (item.first_air_date ? parseInt(item.first_air_date.split("-")[0]) : null),
         avgRating: 0,
         ratingCount: 0,
         _external: true
     }));
 }
+`;
 
-
-
+const spotifyApi = `
 let spotifyAccessToken = "";
 let spotifyTokenExpiresAt = 0;
 
@@ -89,7 +48,7 @@ async function getSpotifyToken() {
     const res = await fetch("https://accounts.spotify.com/api/token", {
         method: "POST",
         headers: {
-            "Authorization": `Basic ${credentials}`,
+            "Authorization": \`Basic \${credentials}\`,
             "Content-Type": "application/x-www-form-urlencoded"
         },
         body: "grant_type=client_credentials"
@@ -112,7 +71,7 @@ async function searchSpotify(query: string, maxResults = 20) {
     url.searchParams.set("limit", String(maxResults));
 
     const res = await fetch(url.toString(), {
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { "Authorization": \`Bearer \${token}\` }
     });
     if (!res.ok) return [];
 
@@ -120,11 +79,11 @@ async function searchSpotify(query: string, maxResults = 20) {
     if (!data.tracks || !data.tracks.items) return [];
 
     return data.tracks.items.map((item: any) => ({
-        id: `spotify-${item.id}`,
+        id: \`spotify-\${item.id}\`,
         externalId: String(item.id),
         mediaType: "SONG",
         title: item.name,
-        description: `By ${item.artists.map((a: any) => a.name).join(", ")} on ${item.album.name}`,
+        description: \`By \${item.artists.map((a: any) => a.name).join(", ")} on \${item.album.name}\`,
         posterUrl: item.album.images.length > 0 ? item.album.images[0].url : null,
         releaseYear: parseInt(item.album.release_date.split("-")[0]),
         avgRating: 0,
@@ -132,59 +91,13 @@ async function searchSpotify(query: string, maxResults = 20) {
         _external: true
     }));
 }
+`;
 
+// Insert the functions
+code = code.replace('// ─── Local DB Search ────────────────────────────────────────', tmdbApi + '\n\n' + spotifyApi + '\n\n// ─── Local DB Search ────────────────────────────────────────');
 
-// ─── Local DB Search ────────────────────────────────────────
-
-async function searchLocal(query: string, type?: string, skip = 0, take = 20) {
-    const where: any = {
-        title: { contains: query.trim(), mode: "insensitive" },
-    };
-    if (type) where.mediaType = type;
-
-    const [results, total] = await Promise.all([
-        prisma.media.findMany({
-            where,
-            orderBy: [{ ratingCount: "desc" }, { avgRating: "desc" }],
-            skip,
-            take,
-            select: {
-                id: true,
-                mediaType: true,
-                title: true,
-                description: true,
-                posterUrl: true,
-                releaseYear: true,
-                genres: true,
-                avgRating: true,
-                ratingCount: true,
-            },
-        }),
-        prisma.media.count({ where }),
-    ]);
-
-    return { results, total };
-}
-
-// GET /api/search?q=&type=
-router.get("/", async (req: Request, res: Response) => {
-    try {
-        const { q, type, page = "1", limit = "20" } = req.query;
-
-        if (!q || typeof q !== "string" || q.trim().length < 2) {
-            res.status(400).json({ error: "Search query must be at least 2 characters" });
-            return;
-        }
-
-        const pageNum = parseInt(page as string, 10);
-        const take = Math.min(parseInt(limit as string, 10), 50);
-        const skip = (pageNum - 1) * take;
-        const queryStr = q.trim();
-        const typeStr = type as string | undefined;
-
-        let finalResults: any[] = [];
-        let totalResults = 0;
-
+// Overhaul route logic
+const routerLogic = `
         if (typeStr === "YOUTUBE_VIDEO") {
             finalResults = await searchYouTube(queryStr, take);
             totalResults = finalResults.length;
@@ -224,21 +137,8 @@ router.get("/", async (req: Request, res: Response) => {
             finalResults = results;
             totalResults = total;
         }
+`;
 
-        res.json({
-            data: finalResults,
-            query: queryStr,
-            pagination: {
-                page: pageNum,
-                limit: take,
-                total: totalResults,
-                totalPages: Math.ceil(totalResults / take) || 1,
-            },
-        });
-    } catch (err) {
-        console.error("Search error:", err);
-        res.status(500).json({ error: "Search failed" });
-    }
-});
+code = code.replace(/if \(typeStr === "YOUTUBE_VIDEO"\) \{[\s\S]*\} else \{[\s\S]*?\n        \}/, routerLogic.trim());
 
-export default router;
+fs.writeFileSync('apps/server/src/modules/search/routes.ts', code);
