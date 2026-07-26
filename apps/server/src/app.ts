@@ -52,7 +52,7 @@ app.use(errorHandler);
 
 // ─── Start Server ───────────────────────────────────────────
 
-app.listen(config.port, () => {
+app.listen(config.port, "0.0.0.0", () => {
     console.log(`
   ╔══════════════════════════════════════════╗
   ║   📦 Letterbox API Server               ║
