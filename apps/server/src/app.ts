@@ -17,7 +17,10 @@ const app = express();
 
 app.use(
     cors({
-        origin: true,
+        origin: [
+            "http://localhost:5173",
+            "https://letterbox-web.vercel.app"
+        ],
         credentials: true,
     })
 );
