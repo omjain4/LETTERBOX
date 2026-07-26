@@ -17,10 +17,7 @@ const app = express();
 
 app.use(
     cors({
-        origin: function (origin, callback) {
-            // Allow all origins for seamless Vercel preview environments
-            callback(null, true);
-        },
+        origin: true,
         credentials: true,
     })
 );
