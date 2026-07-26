@@ -17,7 +17,7 @@ const createListSchema = z.object({
 });
 
 const addItemSchema = z.object({
-    mediaId: z.string().uuid(),
+    mediaId: z.string().min(1),
     position: z.number().int().min(0).optional(),
     notes: z.string().max(1000).optional(),
 });

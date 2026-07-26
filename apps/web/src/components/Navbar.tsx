@@ -18,17 +18,20 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="glass" style={{
+        <nav style={{
             position: "sticky",
             top: 0,
             zIndex: 50,
-            borderBottom: "1px solid var(--color-border)",
+            background: "var(--color-bg-dark)",
+            color: "var(--color-text-invert)",
+            borderBottom: "4px solid var(--color-border)",
+            boxShadow: "0px 4px 0px var(--color-border)"
         }}>
             <div style={{
                 maxWidth: 1200,
                 margin: "0 auto",
                 padding: "0 20px",
-                height: 64,
+                height: 72, // taller for brutalist feel
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -38,47 +41,60 @@ export default function Navbar() {
                 <Link to="/" style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
+                    gap: 12,
                     textDecoration: "none",
                     flexShrink: 0,
+                    color: "var(--color-text-invert)",
                 }}>
-                    <Film size={26} strokeWidth={2.5} style={{ color: "var(--color-primary)" }} />
+                    <div style={{
+                        background: "var(--color-primary)",
+                        padding: "6px",
+                        border: "2px solid var(--color-border)",
+                        boxShadow: "2px 2px 0px var(--color-border)",
+                        display: "flex"
+                    }}>
+                        <Film size={24} strokeWidth={3} style={{ color: "var(--color-text-invert)" }} />
+                    </div>
                     <span style={{
-                        fontSize: "1.25rem",
-                        fontWeight: 800,
-                        letterSpacing: "-0.02em",
-                    }} className="gradient-text">
-                        Letterbox
+                        fontFamily: "var(--font-display)",
+                        fontSize: "1.75rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.05em",
+                        textTransform: "uppercase",
+                    }}>
+                        LETTERBOX
                     </span>
                 </Link>
 
                 {/* Search Bar */}
                 <form onSubmit={handleSearch} style={{
                     flex: 1,
-                    maxWidth: 480,
+                    maxWidth: 500,
                     position: "relative",
                     display: "flex",
                 }}>
-                    <Search size={16} style={{
+                    <Search size={18} style={{
                         position: "absolute",
-                        left: 12,
+                        left: 16,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "var(--color-text-dim)",
+                        color: "var(--color-text)",
                         pointerEvents: "none",
                     }} />
                     <input
                         type="text"
-                        placeholder="Search movies, shows, songs, videos..."
+                        placeholder="SEARCH MOVIES, SHOWS, SONGS..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input"
                         style={{
-                            paddingLeft: 36,
-                            background: "var(--color-bg-elevated)",
-                            borderRadius: 30,
-                            fontSize: "0.85rem",
-                            height: 40,
+                            paddingLeft: 44,
+                            background: "var(--color-bg)",
+                            borderRadius: 0,
+                            border: "2px solid var(--color-border)",
+                            boxShadow: "4px 4px 0px var(--color-border)",
+                            fontWeight: 600,
+                            height: 48,
                         }}
                     />
                 </form>
@@ -87,36 +103,33 @@ export default function Navbar() {
                 <div style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 6,
+                    gap: 12,
                 }} className="hidden-mobile">
                     {user ? (
                         <>
-                            <Link to="/diary" className="btn btn-ghost" style={{ fontSize: "0.85rem" }}>
-                                Diary
+                            <Link to="/diary" className="btn btn-primary">
+                                TITLE LOG
                             </Link>
-                            <Link to="/lists" className="btn btn-ghost" style={{ fontSize: "0.85rem" }}>
-                                Lists
+                            <Link to="/lists" className="btn btn-outline" style={{ background: "var(--color-bg-card)" }}>
+                                LISTS
                             </Link>
                             <Link to={`/profile/${user.username}`} className="btn btn-ghost" style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                fontSize: "0.85rem",
+                                color: "var(--color-text-invert)"
                             }}>
-                                <User size={16} />
+                                <User size={18} />
                                 {user.username}
                             </Link>
-                            <button onClick={logout} className="btn btn-ghost" style={{ fontSize: "0.85rem" }}>
-                                <LogOut size={16} />
+                            <button onClick={logout} className="btn btn-ghost" style={{ color: "var(--color-primary)" }}>
+                                <LogOut size={18} />
                             </button>
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="btn btn-ghost" style={{ fontSize: "0.85rem" }}>
-                                Sign In
+                            <Link to="/login" className="btn btn-ghost" style={{ color: "var(--color-text-invert)", textShadow: "none" }}>
+                                SIGN IN
                             </Link>
-                            <Link to="/register" className="btn btn-primary" style={{ fontSize: "0.85rem" }}>
-                                Sign Up
+                            <Link to="/register" className="btn btn-primary" style={{ boxShadow: "4px 4px 0px var(--color-primary-hover)" }}>
+                                SIGN UP
                             </Link>
                         </>
                     )}
@@ -124,34 +137,35 @@ export default function Navbar() {
 
                 {/* Mobile Menu Toggle */}
                 <button
-                    className="btn btn-ghost mobile-only"
+                    className="btn btn-primary mobile-only"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    style={{ padding: 8 }}
+                    style={{ padding: "8px 12px" }}
                 >
-                    {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                    {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </div>
 
             {/* Mobile Dropdown */}
             {mobileMenuOpen && (
                 <div style={{
-                    padding: "12px 20px 20px",
-                    borderTop: "1px solid var(--color-border)",
+                    padding: "20px",
+                    borderTop: "4px solid var(--color-border)",
+                    background: "var(--color-bg-dark)",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 4,
+                    gap: 12,
                 }}>
                     {user ? (
                         <>
-                            <Link to="/diary" className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>Diary</Link>
-                            <Link to="/lists" className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>Lists</Link>
-                            <Link to={`/profile/${user.username}`} className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>Profile</Link>
-                            <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="btn btn-ghost" style={{ justifyContent: "flex-start" }}>Logout</button>
+                            <Link to="/diary" className="btn btn-primary" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>TITLE LOG</Link>
+                            <Link to="/lists" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>LISTS</Link>
+                            <Link to={`/profile/${user.username}`} className="btn btn-ghost" style={{ color: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>PROFILE</Link>
+                            <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="btn btn-ghost" style={{ color: "var(--color-primary)", justifyContent: "flex-start" }}>LOGOUT</button>
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-                            <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link>
+                            <Link to="/login" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>SIGN IN</Link>
+                            <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>SIGN UP</Link>
                         </>
                     )}
                 </div>

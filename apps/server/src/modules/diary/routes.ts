@@ -11,7 +11,7 @@ router.use(authMiddleware);
 // ─── Validation ─────────────────────────────────────────────
 
 const createEntrySchema = z.object({
-    mediaId: z.string().uuid(),
+    mediaId: z.string().min(1),
     watchedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
     rating: z.number().min(0.5).max(5).step(0.5).optional(),
     review: z.string().max(10000).optional(),

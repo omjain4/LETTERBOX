@@ -1,18 +1,12 @@
 import { Link } from "react-router-dom";
-import { Film, Tv, Music, PlayCircle, Star, TrendingUp, Sparkles } from "lucide-react";
+import { Film, Tv, Music, PlayCircle } from "lucide-react";
 import { useAuth } from "../stores/auth-context";
 
 const MEDIA_CATEGORIES = [
-    { icon: Film, label: "Movies", type: "MOVIE", color: "#6366f1" },
-    { icon: Tv, label: "TV Shows", type: "TV_SHOW", color: "#8b5cf6" },
-    { icon: PlayCircle, label: "YouTube", type: "YOUTUBE_VIDEO", color: "#ef4444" },
-    { icon: Music, label: "Music", type: "SONG", color: "#10b981" },
-];
-
-const FEATURED_STATS = [
-    { label: "Media Types", value: "7", icon: Sparkles },
-    { label: "Track Everything", value: "∞", icon: TrendingUp },
-    { label: "Rating System", value: "★", icon: Star },
+    { icon: Film, label: "Movies", type: "MOVIE", color: "#DA291C" },
+    { icon: Tv, label: "TV Shows", type: "TV_SHOW", color: "#111111" },
+    { icon: PlayCircle, label: "YouTube", type: "YOUTUBE_VIDEO", color: "#DA291C" },
+    { icon: Music, label: "Music", type: "SONG", color: "#111111" },
 ];
 
 export default function HomePage() {
@@ -22,96 +16,73 @@ export default function HomePage() {
         <div>
             {/* Hero Section */}
             <section style={{
-                minHeight: "70vh",
+                minHeight: "75vh",
+                background: "var(--color-bg-dark)",
+                color: "var(--color-text-invert)",
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                padding: "60px 20px",
+                padding: "80px 20px",
                 position: "relative",
-                overflow: "hidden",
+                borderBottom: "4px solid var(--color-border)",
             }}>
-                {/* Background gradient orbs */}
                 <div style={{
-                    position: "absolute",
-                    top: -200,
-                    left: "25%",
-                    width: 500,
-                    height: 500,
-                    borderRadius: "50%",
-                    background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)",
-                    pointerEvents: "none",
-                }} />
-                <div style={{
-                    position: "absolute",
-                    bottom: -150,
-                    right: "20%",
-                    width: 400,
-                    height: 400,
-                    borderRadius: "50%",
-                    background: "radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)",
-                    pointerEvents: "none",
-                }} />
-
-                <div className="animate-fade-in" style={{ position: "relative", zIndex: 1 }}>
+                    maxWidth: 1200,
+                    margin: "0 auto",
+                    width: "100%",
+                }} className="animate-fade-in">
                     <div style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 16px",
-                        borderRadius: 30,
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
+                        fontSize: "1rem",
+                        fontWeight: 700,
                         color: "var(--color-primary)",
-                        background: "var(--color-primary-glow)",
-                        border: "1px solid rgba(99,102,241,0.2)",
-                        marginBottom: 24,
+                        letterSpacing: "0.15em",
+                        marginBottom: 16,
+                        textTransform: "uppercase"
                     }}>
-                        <Sparkles size={14} />
-                        Track Every Media Type in One Place
+                        Official Media Tracking Portal
                     </div>
 
                     <h1 style={{
-                        fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                        fontSize: "clamp(4rem, 10vw, 8rem)",
                         fontWeight: 800,
-                        lineHeight: 1.1,
-                        letterSpacing: "-0.03em",
-                        maxWidth: 800,
-                        margin: "0 auto 20px",
+                        lineHeight: 0.9,
+                        letterSpacing: "-0.02em",
+                        margin: "0 0 24px -6px", // align with edge
+                        color: "var(--color-text-invert)",
                     }}>
-                        Your Universal{" "}
-                        <span className="gradient-text">Media Diary</span>
+                        TRACK<br />
+                        <span style={{ color: "var(--color-primary)" }}>EVERY</span><br />
+                        MEDIA
                     </h1>
 
                     <p style={{
-                        fontSize: "clamp(1rem, 2vw, 1.2rem)",
-                        color: "var(--color-text-muted)",
+                        fontSize: "clamp(1rem, 2vw, 1.25rem)",
+                        color: "#AAAAAA",
                         maxWidth: 600,
-                        margin: "0 auto 36px",
+                        marginBottom: 48,
                         lineHeight: 1.6,
+                        fontWeight: 500,
+                        textTransform: "uppercase",
                     }}>
-                        Track, rate, and review movies, TV shows, music, YouTube videos, and more.
-                        Build lists, follow friends, and discover what to experience next.
+                        Log, rate, and review movies, shows, music, and videos. Share your taste with the world.
                     </p>
 
-                    <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 16, flexWrap: "wrap", zIndex: 10, position: "relative" }}>
                         {user ? (
                             <>
-                                <Link to="/search" className="btn btn-primary glow" style={{ fontSize: "1rem", padding: "14px 32px" }}>
-                                    Explore Media
+                                <Link to="/search" className="btn btn-primary" style={{ padding: "16px 36px", fontSize: "1.1rem" }}>
+                                    EXPLORE MEDIA
                                 </Link>
-                                <Link to="/diary" className="btn btn-outline" style={{ fontSize: "1rem", padding: "14px 32px" }}>
-                                    Your Diary
+                                <Link to="/diary" className="btn btn-outline" style={{ background: "transparent", color: "white", padding: "16px 36px", fontSize: "1.1rem" }}>
+                                    YOUR DIARY
                                 </Link>
                             </>
                         ) : (
                             <>
-                                <Link to="/register" className="btn btn-primary glow" style={{ fontSize: "1rem", padding: "14px 32px" }}>
-                                    Get Started Free
+                                <Link to="/register" className="btn btn-primary" style={{ padding: "16px 36px", fontSize: "1.1rem" }}>
+                                    START TRACKING
                                 </Link>
-                                <Link to="/login" className="btn btn-outline" style={{ fontSize: "1rem", padding: "14px 32px" }}>
-                                    Sign In
+                                <Link to="/login" className="btn btn-outline" style={{ background: "transparent", color: "white", padding: "16px 36px", fontSize: "1.1rem" }}>
+                                    SIGN IN
                                 </Link>
                             </>
                         )}
@@ -119,131 +90,132 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* Stats Strip */}
+            {/* Split Process & Latest Section */}
             <section style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: 48,
-                padding: "40px 20px",
-                flexWrap: "wrap",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+                borderBottom: "4px solid var(--color-border)",
             }}>
-                {FEATURED_STATS.map((stat) => (
-                    <div key={stat.label} className="animate-slide-up" style={{
-                        textAlign: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 8,
+                {/* How It Works */}
+                <div style={{
+                    padding: "60px 40px",
+                    background: "var(--color-bg)",
+                    borderRight: "4px solid var(--color-border)",
+                }}>
+                    <div style={{ color: "var(--color-primary)", fontWeight: 700, letterSpacing: "0.1em", fontSize: "0.9rem", marginBottom: 8, textTransform: "uppercase" }}>Process</div>
+                    <h2 style={{ fontSize: "3rem", marginBottom: 40, lineHeight: 1 }}>HOW IT WORKS</h2>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                        {[
+                            { step: "01", title: "FIND MEDIA", desc: "Search across movies, TV, songs, and YouTube." },
+                            { step: "02", title: "LOG IT", desc: "Add to your diary with a star rating and review." },
+                            { step: "03", title: "BUILD LISTS", desc: "Curate cross-media lists and rank favorites." },
+                            { step: "04", title: "SHARE", desc: "Follow friends and see their real-time feed." },
+                        ].map((item) => (
+                            <div key={item.step} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+                                <div style={{ fontSize: "2.5rem", fontWeight: 800, color: "var(--color-primary)", lineHeight: 0.9 }}>
+                                    {item.step}
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: "1.2rem", marginBottom: 4 }}>{item.title}</h3>
+                                    <p style={{ color: "var(--color-text-muted)", fontSize: "0.95rem", textTransform: "uppercase", fontWeight: 500 }}>{item.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Categories */}
+                <div style={{
+                    padding: "60px 40px",
+                    background: "white",
+                }}>
+                    <div style={{ color: "var(--color-primary)", fontWeight: 700, letterSpacing: "0.1em", fontSize: "0.9rem", marginBottom: 8, textTransform: "uppercase" }}>Categories</div>
+                    <h2 style={{ fontSize: "3rem", marginBottom: 40, lineHeight: 1 }}>SUPPORTED MEDIA</h2>
+
+                    <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr",
+                        gap: 16,
                     }}>
-                        <stat.icon size={28} style={{ color: "var(--color-primary)" }} />
-                        <span style={{ fontSize: "2rem", fontWeight: 800 }}>{stat.value}</span>
-                        <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>{stat.label}</span>
+                        {MEDIA_CATEGORIES.map((cat) => (
+                            <Link
+                                key={cat.type}
+                                to={`/search?type=${cat.type}`}
+                                style={{
+                                    padding: "20px 24px",
+                                    border: "2px solid var(--color-border)",
+                                    boxShadow: "4px 4px 0px var(--color-border)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 16,
+                                    textDecoration: "none",
+                                    background: "white",
+                                    color: "var(--color-text)",
+                                    transition: "transform 0.1s",
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = "translate(-2px, -2px)"}
+                                onMouseOut={(e) => e.currentTarget.style.transform = "translate(0px, 0px)"}
+                            >
+                                <div style={{
+                                    width: 48,
+                                    height: 48,
+                                    background: cat.color === "#DA291C" ? "var(--color-primary)" : "var(--color-bg-dark)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "white",
+                                    flexShrink: 0,
+                                }}>
+                                    <cat.icon size={24} />
+                                </div>
+                                <span style={{
+                                    fontWeight: 800,
+                                    fontSize: "1.2rem",
+                                    fontFamily: "var(--font-display)",
+                                    textTransform: "uppercase"
+                                }}>
+                                    {cat.label}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Huge Stats Strip */}
+            <section style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                background: "white",
+                borderBottom: "4px solid var(--color-border)",
+            }}>
+                {[
+                    { label: "MOVIES LOGGED", value: "∞" },
+                    { label: "TV EPISODES", value: "∞" },
+                    { label: "SONGS TRACKED", value: "∞" },
+                    { label: "YOUTUBE VIDEOS", value: "∞" },
+                ].map((stat) => (
+                    <div key={stat.label} style={{
+                        padding: "40px 20px",
+                        textAlign: "center",
+                        borderRight: "2px solid var(--color-border)",
+                    }}>
+                        <div style={{ fontSize: "4rem", fontWeight: 800, color: "var(--color-primary)", lineHeight: 1 }}>{stat.value}</div>
+                        <div style={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.05em", color: "var(--color-text-muted)" }}>{stat.label}</div>
                     </div>
                 ))}
             </section>
 
-            {/* Media Categories */}
-            <section style={{
-                maxWidth: 1000,
-                margin: "0 auto",
-                padding: "60px 20px",
-            }}>
-                <h2 style={{
-                    fontSize: "1.8rem",
-                    fontWeight: 700,
-                    textAlign: "center",
-                    marginBottom: 40,
-                    letterSpacing: "-0.02em",
-                }}>
-                    One platform for <span className="gradient-text">all your media</span>
-                </h2>
-
-                <div className="stagger-children" style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                    gap: 16,
-                }}>
-                    {MEDIA_CATEGORIES.map((cat) => (
-                        <Link
-                            key={cat.type}
-                            to={`/search?type=${cat.type}`}
-                            className="card glass-hover"
-                            style={{
-                                padding: 28,
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 14,
-                                textDecoration: "none",
-                                cursor: "pointer",
-                            }}
-                        >
-                            <div style={{
-                                width: 56,
-                                height: 56,
-                                borderRadius: "50%",
-                                background: `${cat.color}18`,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                border: `1px solid ${cat.color}30`,
-                            }}>
-                                <cat.icon size={24} style={{ color: cat.color }} />
-                            </div>
-                            <span style={{
-                                fontWeight: 600,
-                                fontSize: "1rem",
-                                color: "var(--color-text)",
-                            }}>
-                                {cat.label}
-                            </span>
-                        </Link>
-                    ))}
-                </div>
-            </section>
-
-            {/* Features */}
-            <section style={{
-                maxWidth: 1000,
-                margin: "0 auto",
-                padding: "60px 20px 80px",
-            }}>
-                <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                    gap: 24,
-                }}>
-                    {[
-                        {
-                            title: "📔 Diary Logging",
-                            desc: "Log any media on a specific date with ratings, reviews, and tags. Track your entire media journey.",
-                        },
-                        {
-                            title: "📋 Mixed Lists",
-                            desc: "Create ranked lists mixing movies, songs, videos, and shows. Share your best-of lists with friends.",
-                        },
-                        {
-                            title: "👥 Social Feed",
-                            desc: "See what friends are watching, listening to, and reviewing in real-time.",
-                        },
-                    ].map((feat) => (
-                        <div key={feat.title} className="card" style={{ padding: 28 }}>
-                            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: 10 }}>{feat.title}</h3>
-                            <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem", lineHeight: 1.6 }}>{feat.desc}</p>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
             {/* Footer */}
             <footer style={{
-                borderTop: "1px solid var(--color-border)",
-                padding: "30px 20px",
+                background: "var(--color-bg-dark)",
+                color: "var(--color-text-invert)",
+                padding: "60px 40px",
                 textAlign: "center",
-                color: "var(--color-text-dim)",
-                fontSize: "0.8rem",
             }}>
-                © 2026 Letterbox — Track Everything You Experience
+                <h2 style={{ fontSize: "clamp(3rem, 8vw, 5rem)", letterSpacing: "-0.02em", color: "white", marginBottom: 20 }}>HELP YOUR CULTURE</h2>
+                <p style={{ color: "#AAAAAA", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.1em" }}>© 2026 Letterbox — The Official Tracker</p>
             </footer>
         </div>
     );

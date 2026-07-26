@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Film, Heart, Star, ChevronLeft, ChevronRight, Loader2, Tag } from 'lucide-react'
+import { Calendar, Film, Heart, ChevronLeft, ChevronRight, Loader2} from 'lucide-react'
 import api from '../lib/api'
 
 interface DiaryEntry {

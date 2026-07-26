@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Film, Tv, Music, PlayCircle, Lock, Globe, Star, Loader2, Trash2, List } from 'lucide-react'
+import { Film, Tv, Music, PlayCircle, Lock, Globe, Loader2, Trash2, List } from 'lucide-react'
 
 import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../../config/database.js";
+import { config } from "../../config/env.js";
 import { authMiddleware, AuthRequest } from "../../middleware/auth.js";
 
 const router = Router();
@@ -7,7 +8,7 @@ const router = Router();
 // GET /api/media/:id — Get media by ID with metadata
 router.get("/:id", async (req: Request, res: Response) => {
     try {
-        const media = await prisma.media.findUnique({
+        let media = await prisma.media.findUnique({
             where: { id: req.params.id },
             include: {
                 movieMetadata: true,
@@ -23,6 +24,81 @@ router.get("/:id", async (req: Request, res: Response) => {
                 },
             },
         });
+
+        // Lazy-load YouTube video if it's an external yt- ID and not in DB yet
+        if (!media && req.params.id.startsWith("yt-")) {
+            const videoId = req.params.id.replace("yt-", "");
+            const apiKey = config.youtube.apiKey;
+
+            if (apiKey) {
+                const url = new URL("https://www.googleapis.com/youtube/v3/videos");
+                url.searchParams.set("part", "snippet,contentDetails,statistics");
+                url.searchParams.set("id", videoId);
+                url.searchParams.set("key", apiKey);
+
+                const res = await fetch(url.toString());
+                if (res.ok) {
+                    const data = (await res.json()) as any;
+                    if (data.items && data.items.length > 0) {
+                        const item = data.items[0];
+
+                        // Parse ISO 8601 duration to seconds roughly
+                        let durationSeconds = 0;
+                        const durationStr = item.contentDetails?.duration || "";
+                        const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+                        if (match) {
+                            const hours = parseInt(match[1] || "0", 10);
+                            const mins = parseInt(match[2] || "0", 10);
+                            const secs = parseInt(match[3] || "0", 10);
+                            durationSeconds = hours * 3600 + mins * 60 + secs;
+                        }
+
+                        // Create in DB
+                        media = await prisma.media.create({
+                            data: {
+                                id: req.params.id,
+                                externalId: videoId,
+                                externalSource: "YOUTUBE",
+                                mediaType: "YOUTUBE_VIDEO",
+                                title: item.snippet.title,
+                                description: item.snippet.description,
+                                posterUrl: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url || null,
+                                releaseYear: new Date(item.snippet.publishedAt).getFullYear(),
+                                runtimeMinutes: Math.floor(durationSeconds / 60) || null,
+                                youtubeMetadata: {
+                                    create: {
+                                        channelId: item.snippet.channelId,
+                                        channelName: item.snippet.channelTitle,
+                                        videoId: videoId,
+                                        isLiveStream: item.snippet.liveBroadcastContent !== "none",
+                                        viewCount: parseInt(item.statistics?.viewCount || "0", 10),
+                                        likeCount: parseInt(item.statistics?.likeCount || "0", 10),
+                                        durationSeconds,
+                                        thumbnailUrl: item.snippet.thumbnails?.high?.url || null,
+                                    }
+                                }
+                            },
+                        }) as any; // Cast as any because the initial create doesn't include the counts
+
+                        // Refetch to get the includes and counts
+                        if (media) {
+                            media = await prisma.media.findUnique({
+                                where: { id: req.params.id },
+                                include: {
+                                    movieMetadata: true,
+                                    tvShowMetadata: true,
+                                    youtubeMetadata: true,
+                                    songMetadata: true,
+                                    _count: {
+                                        select: { diaryEntries: true, reviews: true, listItems: true },
+                                    },
+                                },
+                            });
+                        }
+                    }
+                }
+            }
+        }
 
         if (!media) {
             res.status(404).json({ error: "Media not found" });

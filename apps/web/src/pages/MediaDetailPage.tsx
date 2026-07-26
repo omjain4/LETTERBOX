@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
-    Film, Tv, Music, PlayCircle, Star, Calendar, Plus, Heart,
-    ExternalLink, Loader2, Clock, Users, List
+    Film, Tv, Music, PlayCircle, Star, Calendar, Plus,
+     Loader2, Clock, List
 } from 'lucide-react'
 import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'
