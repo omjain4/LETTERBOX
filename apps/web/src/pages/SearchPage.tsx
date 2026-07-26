@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Search as SearchIcon, Film, Tv, Music, PlayCircle, Clapperboard, Loader2 } from "lucide-react";
 import api from "../lib/api";
+import { UserCard } from "../components/UserCard";
 
 const MEDIA_FILTERS = [
     { label: "All", value: "", icon: null },
+    { label: "Accounts", value: "USERS", icon: null },
     { label: "Movies", value: "MOVIE", icon: Film },
     { label: "TV Shows", value: "TV_SHOW", icon: Tv },
     { label: "YouTube", value: "YOUTUBE_VIDEO", icon: PlayCircle },
@@ -28,7 +30,7 @@ export default function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [query, setQuery] = useState(searchParams.get("q") || "");
     const [activeType, setActiveType] = useState(searchParams.get("type") || "");
-    const [results, setResults] = useState<MediaResult[]>([]);
+    const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [total, setTotal] = useState(0);
 
@@ -44,17 +46,24 @@ export default function SearchPage() {
         if (!q.trim()) return;
         setLoading(true);
         try {
-            const params: any = { q: q.trim() };
-            if (type) params.type = type;
-            const { data } = await api.get("/search", { params });
-            setResults(data.data);
-            setTotal(data.pagination.total);
+            if (type === "USERS") {
+                const { data } = await api.get("/users/search", { params: { q: q.trim() } });
+                setResults(data);
+                setTotal(data.length);
+            } else {
+                const params: any = { q: q.trim() };
+                if (type) params.type = type;
+                const { data } = await api.get("/search", { params });
+                setResults(data.data);
+                setTotal(data.pagination.total);
+            }
         } catch {
             setResults([]);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -131,14 +140,19 @@ export default function SearchPage() {
 
             {/* Results */}
             {loading ? (
-                <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 80,
-                    color: "var(--color-text-muted)",
-                }}>
-                    <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
+                <div style={{ display: "flex", justifyContent: "center", padding: 60, color: "var(--color-primary)" }}>
+                    <Loader2 className="animate-spin" size={48} />
+                </div>
+            ) : activeType === "USERS" ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {results.map((user) => (
+                        <UserCard key={user.id} user={user} />
+                    ))}
+                    {results.length === 0 && query && (
+                        <div style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
+                            No users found matching "{query}"
+                        </div>
+                    )}
                 </div>
             ) : results.length > 0 ? (
                 <>

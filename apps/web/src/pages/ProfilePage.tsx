@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
     User as UserIcon, Calendar, Film, Heart, Star,
-    BookOpen, List, Users, Loader2
+    BookOpen, List, Users, Loader2, X
 } from 'lucide-react'
 import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'
 import MonthlyActivityHeatmap from '../components/MonthlyActivityHeatmap'
+import { UserCard, type UserData } from '../components/UserCard'
 
 interface ProfileData {
     id: string
@@ -46,6 +47,7 @@ interface ProfileData {
         liked: boolean
         media: { id: string; title: string; mediaType: string; posterUrl: string | null; releaseYear: number | null }
     }[]
+    isFollowing?: boolean
 }
 
 export default function ProfilePage() {
@@ -54,15 +56,54 @@ export default function ProfilePage() {
     const [profile, setProfile] = useState<ProfileData | null>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'diary' | 'lists' | 'reviews'>('diary')
+    const [isSubmittingFollow, setIsSubmittingFollow] = useState(false)
+    const [modalConfig, setModalConfig] = useState<{ title: string, users: UserData[] } | null>(null);
+    const [loadingModal, setLoadingModal] = useState(false);
 
-    useEffect(() => {
+    const fetchProfile = () => {
         if (!username) return
         setLoading(true)
         api.get(`/users/${username}`)
             .then(({ data }) => setProfile(data))
             .catch(() => setProfile(null))
             .finally(() => setLoading(false))
-    }, [username])
+    }
+
+    useEffect(() => {
+        fetchProfile()
+    }, [username, currentUser])
+
+    const handleFollowToggle = async () => {
+        if (!currentUser || !profile || isSubmittingFollow) return;
+        setIsSubmittingFollow(true);
+        try {
+            if (profile.isFollowing) {
+                await api.delete(`/users/${username}/follow`);
+                setProfile(prev => prev ? { ...prev, isFollowing: false, _count: { ...prev._count, followers: prev._count.followers - 1 } } : prev);
+            } else {
+                await api.post(`/users/${username}/follow`);
+                setProfile(prev => prev ? { ...prev, isFollowing: true, _count: { ...prev._count, followers: prev._count.followers + 1 } } : prev);
+            }
+        } catch (e) {
+            console.error("Failed to toggle follow status");
+        } finally {
+            setIsSubmittingFollow(false);
+        }
+    };
+
+    const fetchSocialList = async (type: 'followers' | 'following') => {
+        setLoadingModal(true);
+        setModalConfig({ title: type === 'followers' ? 'Followers' : 'Following', users: [] });
+        try {
+            const { data } = await api.get(`/users/${username}/${type}`);
+            setModalConfig({ title: type === 'followers' ? 'Followers' : 'Following', users: data });
+        } catch (e) {
+            console.error(e);
+            setModalConfig(null);
+        } finally {
+            setLoadingModal(false);
+        }
+    };
 
     if (loading) return (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
@@ -249,6 +290,35 @@ export default function ProfilePage() {
                             {profile.displayName || profile.username}
                         </h1>
                         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>@{profile.username}</p>
+
+                        {profile.bio && (
+                            <p style={{
+                                marginTop: 16,
+                                color: 'var(--color-text-dim)',
+                                lineHeight: 1.6,
+                                maxWidth: '100%',
+                            }}>
+                                {profile.bio}
+                            </p>
+                        )}
+
+                        {currentUser && currentUser.username !== profile.username && (
+                            <button
+                                onClick={handleFollowToggle}
+                                disabled={isSubmittingFollow}
+                                className={profile.isFollowing ? "btn-outline" : "btn-primary"}
+                                style={{
+                                    marginTop: 16,
+                                    padding: '8px 24px',
+                                    width: 'fit-content',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                }}
+                            >
+                                {profile.isFollowing ? (isSubmittingFollow ? "..." : "Following") : (isSubmittingFollow ? "..." : "Follow")}
+                            </button>
+                        )}
                     </div>
                     {isOwn && (
                         <Link to="/settings" className="btn btn-outline" style={{ fontSize: '0.85rem', alignSelf: 'flex-start', marginTop: 8 }}>
@@ -256,13 +326,6 @@ export default function ProfilePage() {
                         </Link>
                     )}
                 </div>
-
-                {/* Bio */}
-                {profile.bio && (
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', lineHeight: 1.7, maxWidth: 600, marginBottom: 24 }}>
-                        {profile.bio}
-                    </p>
-                )}
 
                 {/* Stats Row */}
                 <div className="profile-stats-grid" style={{
@@ -368,6 +431,58 @@ export default function ProfilePage() {
                     <MonthlyActivityHeatmap activityData={profile.activityData} />
                 )}
             </div>
+
+            {modalConfig && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    padding: 24,
+                    backdropFilter: 'blur(4px)'
+                }} onClick={() => setModalConfig(null)}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: 600,
+                        backgroundColor: 'var(--color-background)',
+                        border: '2px solid var(--color-primary)',
+                        maxHeight: '80vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '12px 12px 0 var(--color-primary)',
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ padding: 24, borderBottom: '2px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, textTransform: 'uppercase', margin: 0, color: 'var(--color-text)' }}>
+                                {modalConfig.title}
+                            </h2>
+                            <button onClick={() => setModalConfig(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text)', cursor: 'pointer' }}>
+                                <X size={28} />
+                            </button>
+                        </div>
+                        <div style={{ overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {loadingModal ? (
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: 40, color: 'var(--color-primary)' }}>
+                                    <Loader2 className="animate-spin" size={40} />
+                                </div>
+                            ) : modalConfig.users.length === 0 ? (
+                                <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: 40, fontWeight: 700, textTransform: 'uppercase' }}>
+                                    NO {modalConfig.title.toUpperCase()} FOUND
+                                </div>
+                            ) : (
+                                modalConfig.users.map((u: any) => (
+                                    <div key={u.id} onClick={() => setModalConfig(null)}>
+                                        <UserCard user={u} />
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
         </div>
     )
