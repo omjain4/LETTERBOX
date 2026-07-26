@@ -15,17 +15,27 @@ const app = express();
 
 // ─── Global Middleware ──────────────────────────────────────
 
-const corsOptions = {
-    origin: [
-        "http://localhost:5173",
-        "https://letterbox-web.vercel.app",
-        /^https:\/\/.*\.vercel\.app$/
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-};
+app.use((req, res, next) => {
+    const allowedOrigins = ['http://localhost:5173', 'https://letterbox-web.vercel.app'];
+    const origin = req.headers.origin;
 
-app.use(cors(corsOptions));
+    // Allow dynamic Vercel branches as well
+    if (origin && (allowedOrigins.includes(origin) || /^https:\/\/.*\.vercel\.app$/.test(origin))) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    // If it's a preflight request, immediately return a 200 OK
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
+    next();
+});
 app.use(express.json({ limit: "10mb" }));
 
 // ─── Health Check ───────────────────────────────────────────
