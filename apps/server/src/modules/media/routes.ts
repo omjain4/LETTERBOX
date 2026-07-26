@@ -110,6 +110,7 @@ router.get("/:id", async (req: Request, res: Response) => {
                 // Try movie first
                 let url = new URL(`${config.tmdb.baseUrl}/movie/${tmdbId}`);
                 url.searchParams.set("api_key", apiKey);
+                url.searchParams.set("append_to_response", "credits");
                 let res = await fetch(url.toString());
                 let data = await (res.ok ? res.json() : null);
                 let type: "MOVIE" | "TV_SHOW" = "MOVIE";
@@ -117,6 +118,7 @@ router.get("/:id", async (req: Request, res: Response) => {
                 if (!res.ok || !data || data.status_code === 34) {
                     url = new URL(`${config.tmdb.baseUrl}/tv/${tmdbId}`);
                     url.searchParams.set("api_key", apiKey);
+                    url.searchParams.set("append_to_response", "credits");
                     res = await fetch(url.toString());
                     data = await (res.ok ? res.json() : null);
                     type = "TV_SHOW";
@@ -141,13 +143,20 @@ router.get("/:id", async (req: Request, res: Response) => {
                                 movieMetadata: type === "MOVIE" ? {
                                     create: {
                                         tmdbId: String(data.id),
-                                        director: null // We could fetch credits but keep it simple
+                                        director: data.credits?.crew?.find((c: any) => c.job === "Director")?.name || null,
+                                        cast: data.credits?.cast?.slice(0, 5).map((c: any) => c.name) || [],
+                                        studio: data.production_companies?.[0]?.name || null,
+                                        imdbId: data.imdb_id || null,
+                                        tagline: data.tagline || null
                                     }
                                 } : undefined,
                                 tvShowMetadata: type === "TV_SHOW" ? {
                                     create: {
                                         tmdbId: String(data.id),
-                                        seasonCount: data.number_of_seasons || 1
+                                        seasonCount: data.number_of_seasons || 1,
+                                        episodeCount: data.number_of_episodes || null,
+                                        status: data.status || null,
+                                        network: data.networks?.[0]?.name || null
                                     }
                                 } : undefined
                             },

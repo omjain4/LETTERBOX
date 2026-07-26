@@ -8,6 +8,7 @@ import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'
 import MonthlyActivityHeatmap from '../components/MonthlyActivityHeatmap'
 import { UserCard, type UserData } from '../components/UserCard'
+import EditProfileModal from '../components/EditProfileModal'
 
 interface ProfileData {
     id: string
@@ -55,8 +56,29 @@ export default function ProfilePage() {
     const { user: currentUser } = useAuth()
     const [profile, setProfile] = useState<ProfileData | null>(null)
     const [loading, setLoading] = useState(true)
+
+    const handleDeleteEntry = async (id: string, type: 'diary' | 'review' | 'favorite') => {
+        if (!confirm('Are you sure you want to delete this?')) return;
+        try {
+            await api.delete(`/diary/${id}`);
+            setProfile(p => {
+                if (!p) return p;
+                const copy = { ...p };
+                if (type === 'diary') copy.recentDiary = copy.recentDiary.filter(e => e.id !== id);
+                if (type === 'favorite') copy.favorites = copy.favorites.filter(e => e.id !== id);
+                if (type === 'review' && copy.userReviews) {
+                    copy.userReviews = copy.userReviews.filter(e => e.id !== id);
+                }
+                copy._count.diaryEntries = copy._count.diaryEntries - 1;
+                return copy;
+            });
+        } catch (e) {
+            alert('Failed to delete entry.');
+        }
+    }
     const [activeTab, setActiveTab] = useState<'diary' | 'lists' | 'reviews'>('diary')
     const [isSubmittingFollow, setIsSubmittingFollow] = useState(false)
+    const [showEditProfile, setShowEditProfile] = useState(false)
     const [modalConfig, setModalConfig] = useState<{ title: string, users: UserData[] } | null>(null);
     const [loadingModal, setLoadingModal] = useState(false);
 
@@ -274,6 +296,11 @@ export default function ProfilePage() {
                                             </div>
                                         )}
                                         {entry.liked && <Heart size={14} fill="#f43f5e" color="#f43f5e" />}
+                                        {isOwn && (
+                                            <button onClick={(e) => { e.preventDefault(); handleDeleteEntry(entry.id, 'review'); }} style={{ background: 'transparent', color: 'var(--color-danger)', border: 'none', marginLeft: 10, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                                                Delete
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600, marginBottom: 16 }}>
@@ -461,6 +488,18 @@ export default function ProfilePage() {
                     <MonthlyActivityHeatmap activityData={profile.activityData} />
                 )}
             </div>
+
+
+            {showEditProfile && (
+                <EditProfileModal
+                    user={profile}
+                    onClose={() => setShowEditProfile(false)}
+                    onSuccess={() => {
+                        setShowEditProfile(false);
+                        window.location.reload();
+                    }}
+                />
+            )}
 
             {modalConfig && (
                 <div style={{
