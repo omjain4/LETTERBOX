@@ -135,7 +135,7 @@ export default function ListsPage() {
                         <div key={list.id} className="card" style={{ overflow: 'hidden' }}>
                             {/* Poster Strip */}
                             <div style={{ display: 'flex', height: 80, background: 'var(--color-bg-elevated)', overflow: 'hidden' }}>
-                                {list.items.slice(0, 4).map((item, i) => (
+                                {(list.items || []).slice(0, 4).map((item, i) => (
                                     <div key={i} style={{ flex: 1, overflow: 'hidden' }}>
                                         {item.media.posterUrl
                                             ? <img src={item.media.posterUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -143,7 +143,7 @@ export default function ListsPage() {
                                         }
                                     </div>
                                 ))}
-                                {list.items.length === 0 && (
+                                {(list.items || []).length === 0 && (
                                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <List size={24} style={{ color: 'var(--color-text-dim)' }} />
                                     </div>
@@ -194,3 +194,4 @@ export default function ListsPage() {
         </div>
     )
 }
+
