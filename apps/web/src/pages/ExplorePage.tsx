@@ -88,13 +88,13 @@ export default function ExplorePage() {
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Browse By</span>
 
-                    <select value={type} onChange={e => setType(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                    <select value={type} onChange={e => setType(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text-invert)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
                         <option value="MOVIE">Movies</option>
                         <option value="TV_SHOW">TV Shows</option>
                         <option value="">All Types</option>
                     </select>
 
-                    <select value={genre} onChange={e => setGenre(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                    <select value={genre} onChange={e => setGenre(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text-invert)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
                         <option value="">All Genres</option>
                         <option value="Action">Action</option>
                         <option value="Drama">Drama</option>
@@ -105,7 +105,7 @@ export default function ExplorePage() {
                         <option value="Romance">Romance</option>
                     </select>
 
-                    <select value={year} onChange={e => setYear(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                    <select value={year} onChange={e => setYear(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text-invert)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
                         <option value="">Any Year</option>
                         <option value="2024">2024</option>
                         <option value="2023">2023</option>
@@ -116,7 +116,7 @@ export default function ExplorePage() {
                         <option value="2000">2000s</option>
                     </select>
 
-                    <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                    <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text-invert)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
                         <option value="ratingCount">Most Popular</option>
                         <option value="avgRating">Highest Rated</option>
                         <option value="releaseYear">Newest Releases</option>

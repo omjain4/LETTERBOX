@@ -6,8 +6,8 @@ export default function CurtainLoader({ isLoading }: { isLoading: boolean }) {
 
     useEffect(() => {
         if (!isLoading) {
-            // Wait 2 seconds BEFORE starting the lift animation
-            const liftTimeout = setTimeout(() => setIsLifting(true), 2000);
+            // Wait 1 second BEFORE starting the lift animation as requested
+            const liftTimeout = setTimeout(() => setIsLifting(true), 1000);
             return () => clearTimeout(liftTimeout);
         } else {
             setIsLifting(false);
