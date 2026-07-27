@@ -46,6 +46,16 @@ router.post("/", async (req: AuthRequest, res: Response) => {
                 isPublic: data.isPublic ?? true,
                 isRanked: data.isRanked ?? false,
             },
+            include: {
+                _count: { select: { items: true } },
+                items: {
+                    take: 4,
+                    orderBy: { position: "asc" },
+                    include: {
+                        media: { select: { id: true, title: true, posterUrl: true } },
+                    },
+                },
+            },
         });
 
         res.status(201).json(list);
