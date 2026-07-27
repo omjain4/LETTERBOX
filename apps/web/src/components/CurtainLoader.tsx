@@ -1,16 +1,27 @@
 import React, { useEffect, useState } from 'react';
 
 export default function CurtainLoader({ isLoading }: { isLoading: boolean }) {
-    const [render, setRender] = useState(isLoading);
+    const [render, setRender] = useState(true);
+    const [isLifting, setIsLifting] = useState(false);
 
     useEffect(() => {
         if (!isLoading) {
-            const timeout = setTimeout(() => setRender(false), 1200); // Wait for transition
-            return () => clearTimeout(timeout);
+            // Wait 2 seconds BEFORE starting the lift animation
+            const liftTimeout = setTimeout(() => setIsLifting(true), 2000);
+            return () => clearTimeout(liftTimeout);
         } else {
+            setIsLifting(false);
             setRender(true);
         }
     }, [isLoading]);
+
+    useEffect(() => {
+        if (isLifting) {
+            // Wait 1.2 seconds for the transition to finish before unmounting
+            const unmountTimeout = setTimeout(() => setRender(false), 1200);
+            return () => clearTimeout(unmountTimeout);
+        }
+    }, [isLifting]);
 
     if (!render) return null;
 
@@ -39,14 +50,14 @@ export default function CurtainLoader({ isLoading }: { isLoading: boolean }) {
                 )
             `,
             backgroundSize: '15vw 100%',
-            transform: isLoading ? 'translateY(0)' : 'translateY(-100vh)',
+            transform: !isLifting ? 'translateY(0)' : 'translateY(-100vh)',
             transition: 'transform 1s cubic-bezier(0.75, 0, 0.25, 1)',
             boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
         }}>
             {/* The Logo / Text in the middle */}
             <div style={{
                 transition: 'opacity 0.3s ease',
-                opacity: isLoading ? 1 : 0,
+                opacity: !isLifting ? 1 : 0,
                 textAlign: 'center',
                 display: 'flex',
                 flexDirection: 'column',
