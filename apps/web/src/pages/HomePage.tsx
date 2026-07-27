@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
-import { Film, Tv, Music, PlayCircle } from "lucide-react";
+import { Film, Tv, Music, PlayCircle, Star } from "lucide-react";
 import { useAuth } from "../stores/auth-context";
+import { useEffect, useState } from "react";
+import api from "../lib/api";
+import { format } from "date-fns";
 
 const MEDIA_CATEGORIES = [
     { icon: Film, label: "Movies", type: "MOVIE", color: "#DA291C" },
@@ -11,6 +14,112 @@ const MEDIA_CATEGORIES = [
 
 export default function HomePage() {
     const { user } = useAuth();
+    const [feed, setFeed] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (user) {
+            api.get("/users/feed")
+                .then(res => setFeed(res.data))
+                .catch(console.error);
+        }
+    }, [user]);
+
+    if (user) {
+        return (
+            <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 20px" }}>
+                <h1 style={{ textAlign: "center", fontSize: "clamp(1.5rem, 4vw, 2.5rem)", fontWeight: 400, color: "var(--color-text-muted)", marginBottom: 40 }}>
+                    Welcome back, <span style={{ color: "var(--color-text)", fontWeight: 600 }}>{user.username}</span>. Here's what your friends have been watching...
+                </h1>
+
+                <div style={{ marginBottom: 40 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--color-border)", paddingBottom: 8, marginBottom: 16 }}>
+                        <h3 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)", margin: 0 }}>
+                            NEW FROM FRIENDS
+                        </h3>
+                        <Link to="/activity" style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)", textDecoration: "none" }}>
+                            ⚡ ALL ACTIVITY
+                        </Link>
+                    </div>
+
+                    {feed.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "40px", color: "var(--color-text-muted)" }}>
+                            <p>No recent activity from your friends.</p>
+                            <Link to="/search" style={{ color: "var(--color-primary)", textDecoration: "none" }}>Find users to follow</Link>
+                        </div>
+                    ) : (
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                            gap: 16
+                        }}>
+                            {feed.slice(0, 5).map(entry => (
+                                <div key={entry.id} style={{ display: "flex", flexDirection: "column" }}>
+                                    <Link to={`/media/${entry.media.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                                        <div style={{
+                                            aspectRatio: "2/3",
+                                            background: "var(--color-bg)",
+                                            backgroundImage: `url(${entry.media.posterUrl})`,
+                                            backgroundSize: "cover",
+                                            backgroundPosition: "center",
+                                            border: "2px solid var(--color-border)",
+                                            position: "relative"
+                                        }}>
+                                            {/* Avatar overlay at the bottom */}
+                                            <div style={{
+                                                position: "absolute",
+                                                bottom: 0,
+                                                left: 0,
+                                                right: 0,
+                                                background: "rgba(0,0,0,0.7)",
+                                                padding: "6px 8px",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8,
+                                                borderTop: "1px solid var(--color-border)"
+                                            }}>
+                                                <div style={{
+                                                    width: 16, height: 16, borderRadius: "50%",
+                                                    background: entry.user.avatarUrl ? `url(${entry.user.avatarUrl}) center/cover` : "var(--color-primary)",
+                                                    border: "1px solid rgba(255,255,255,0.2)"
+                                                }} />
+                                                <span style={{ fontSize: "0.75rem", color: "white", fontWeight: 600 }}>{entry.user.username}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "0 2px" }}>
+                                        <div style={{ display: "flex", color: "#00E054" }}>
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <Star key={i} size={12} fill={entry.rating && i < entry.rating ? "currentColor" : "none"} strokeWidth={entry.rating && i < entry.rating ? 0 : 1} stroke="currentColor" />
+                                            ))}
+                                        </div>
+                                        <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                                            {format(new Date(entry.createdAt), "MMM d")}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Popular Section (Placeholder for aesthetic) */}
+                <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--color-border)", paddingBottom: 8, marginBottom: 16 }}>
+                        <h3 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)", margin: 0 }}>
+                            POPULAR ON MOSIAC
+                        </h3>
+                        <Link to="/search" style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)", textDecoration: "none" }}>
+                            MORE
+                        </Link>
+                    </div>
+                    {/* Just fetching a few popular media using empty query or placeholder */}
+                    <div style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+                        Check out the <Link to="/search" style={{ color: "var(--color-primary)" }}>Explore</Link> page to find popular items.
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -75,25 +184,14 @@ export default function HomePage() {
                     </p>
 
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap", zIndex: 10, position: "relative" }}>
-                        {user ? (
-                            <>
-                                <Link to="/search" className="btn btn-primary" style={{ padding: "16px 36px", fontSize: "1.1rem" }}>
-                                    EXPLORE MEDIA
-                                </Link>
-                                <Link to="/diary" className="btn btn-outline" style={{ background: "transparent", color: "white", padding: "16px 36px", fontSize: "1.1rem" }}>
-                                    YOUR DIARY
-                                </Link>
-                            </>
-                        ) : (
-                            <>
-                                <Link to="/register" className="btn btn-primary" style={{ padding: "16px 36px", fontSize: "1.1rem" }}>
-                                    START TRACKING
-                                </Link>
-                                <Link to="/login" className="btn btn-outline" style={{ background: "transparent", color: "white", padding: "16px 36px", fontSize: "1.1rem" }}>
-                                    SIGN IN
-                                </Link>
-                            </>
-                        )}
+                        <>
+                            <Link to="/register" className="btn btn-primary" style={{ padding: "16px 36px", fontSize: "1.1rem" }}>
+                                START TRACKING
+                            </Link>
+                            <Link to="/login" className="btn btn-outline" style={{ background: "transparent", color: "white", padding: "16px 36px", fontSize: "1.1rem" }}>
+                                SIGN IN
+                            </Link>
+                        </>
                     </div>
                 </div>
             </section>

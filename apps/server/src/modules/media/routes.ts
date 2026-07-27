@@ -241,7 +241,7 @@ router.get("/:id", optionalAuthMiddleware, async (req: AuthRequest, res: Respons
                 orderBy: { watchedDate: "desc" }
             });
         }
-        
+
         // Build normalized response
 
         const metadata =
@@ -313,6 +313,51 @@ router.get("/", async (req: Request, res: Response) => {
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch media" });
+    }
+});
+
+// GET /api/media/:id/reviews — Get all reviews (diary entries with review text) for this media
+router.get("/:id/reviews", async (req: Request, res: Response) => {
+    try {
+        const id = String(req.params.id);
+        const { page = "1", limit = "10" } = req.query;
+        const skip = (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
+        const take = parseInt(limit as string, 10);
+
+        const [reviews, total] = await Promise.all([
+            prisma.diaryEntry.findMany({
+                where: { mediaId: id, review: { not: null } },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take,
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                            displayName: true,
+                            avatarUrl: true,
+                        }
+                    }
+                }
+            }),
+            prisma.diaryEntry.count({
+                where: { mediaId: id, review: { not: null } }
+            })
+        ]);
+
+        res.json({
+            data: reviews,
+            pagination: {
+                page: parseInt(page as string, 10),
+                limit: take,
+                total,
+                totalPages: Math.ceil(total / take)
+            }
+        });
+    } catch (e) {
+        console.error("Failed to fetch media reviews", e);
+        res.status(500).json({ error: "Failed to fetch reviews" });
     }
 });
 

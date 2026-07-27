@@ -4,12 +4,50 @@ import { authMiddleware, optionalAuthMiddleware, AuthRequest } from "../../middl
 
 const router = Router();
 
+// ─── Routes ─────────────────────────────────────────────────
+
+// GET /api/users/feed — Get recent diary entries from followed users
+router.get("/feed", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const follows = await prisma.follow.findMany({
+            where: { followerId: req.userId },
+            select: { followingId: true }
+        });
+        const followingIds = follows.map(f => f.followingId);
+
+        if (followingIds.length === 0) {
+            return res.json([]);
+        }
+
+        const recentActivity = await prisma.diaryEntry.findMany({
+            where: {
+                userId: { in: followingIds },
+                review: { not: null }
+            },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+            include: {
+                user: {
+                    select: { id: true, username: true, displayName: true, avatarUrl: true }
+                },
+                media: {
+                    select: { id: true, title: true, mediaType: true, posterUrl: true, releaseYear: true }
+                }
+            }
+        });
+
+        res.json(recentActivity);
+    } catch (e) {
+        console.error("Failed to fetch feed", e);
+        res.status(500).json({ error: "Failed to fetch feed" });
+    }
+});
 
 // GET /api/users/search?q= — Search for users
 router.get("/search", async (req: Request, res: Response) => {
     const q = req.query.q || "";
     if (!q) { res.json([]); return; }
-    
+
     const users = await prisma.user.findMany({
         where: {
             OR: [
@@ -122,7 +160,7 @@ router.get("/:username", optionalAuthMiddleware, async (req: AuthRequest, res: R
     user._count.reviews = reviewsCount;
 
     // Convert activity array into a dictionary: { "YYYY-MM-DD": count }
-    
+
     let isFollowing = false;
     if (req.userId) {
         const follow = await prisma.follow.findFirst({
