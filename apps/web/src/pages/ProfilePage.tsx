@@ -10,6 +10,7 @@ import MonthlyActivityHeatmap from '../components/MonthlyActivityHeatmap'
 import { UserCard, type UserData } from '../components/UserCard'
 import EditProfileModal from '../components/EditProfileModal'
 import ConfirmModal from '../components/ConfirmModal'
+import { Search } from 'lucide-react'
 
 interface ProfileData {
     id: string
@@ -33,11 +34,9 @@ interface ProfileData {
         liked: boolean
         media: { id: string; title: string; mediaType: string; posterUrl: string | null }
     }[]
-    favorites: {
+    favoritePicks: {
         id: string
-        watchedDate: string
-        rating: number | null
-        liked: boolean
+        slotInt: number
         media: { id: string; title: string; mediaType: string; posterUrl: string | null }
     }[]
     activityData: Record<string, number>
@@ -59,37 +58,28 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true)
 
 
-    const handleUnlike = (id: string, e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleRemoveFavorite = (slotInt: number) => {
         setConfirmAction({
-            title: 'Remove from Favorites',
-            message: 'Are you sure you want to remove this from your favorites?',
+            title: 'Remove Favorite Pick',
+            message: 'Are you sure you want to open up this favorite slot?',
             action: async () => {
                 try {
-                    await api.patch(`/diary/${id}`, { liked: false });
+                    await api.post(`/users/favorites`, { mediaId: null, slotInt });
                     setProfile(p => {
                         if (!p) return p;
                         const copy = { ...p };
-                        copy.favorites = copy.favorites.filter(entry => entry.id !== id);
-                        if (copy.recentDiary) {
-                            const idx = copy.recentDiary.findIndex(e => e.id === id);
-                            if (idx > -1) copy.recentDiary[idx].liked = false;
-                        }
-                        if (copy.userReviews) {
-                            const rIdx = copy.userReviews.findIndex(e => e.id === id);
-                            if (rIdx > -1) copy.userReviews[rIdx].liked = false;
-                        }
+                        copy.favoritePicks = copy.favoritePicks.filter(entry => entry.slotInt !== slotInt);
                         return copy;
                     });
                 } catch (e) {
-                    alert('Failed to remove from favorites.');
+                    alert('Failed to remove favorite pick.');
                 }
                 setConfirmAction(null);
             }
         });
     }
-    const handleDeleteEntry = (id: string, type: 'diary' | 'review' | 'favorite') => {
+
+    const handleDeleteEntry = (id: string, type: 'diary' | 'review') => {
         setConfirmAction({
             title: 'Delete Entry',
             message: 'Are you sure you want to delete this entry? This action cannot be undone.',
@@ -100,7 +90,6 @@ export default function ProfilePage() {
                         if (!p) return p;
                         const copy = { ...p };
                         if (type === 'diary') copy.recentDiary = copy.recentDiary.filter(e => e.id !== id);
-                        if (type === 'favorite') copy.favorites = copy.favorites.filter(e => e.id !== id);
                         if (type === 'review' && copy.userReviews) {
                             copy.userReviews = copy.userReviews.filter(e => e.id !== id);
                         }
@@ -114,12 +103,47 @@ export default function ProfilePage() {
             }
         });
     }
+
     const [activeTab, setActiveTab] = useState<'diary' | 'lists' | 'reviews'>('diary')
     const [isSubmittingFollow, setIsSubmittingFollow] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
+    const [activePickSlot, setActivePickSlot] = useState<number | null>(null)
     const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; action: () => void } | null>(null)
     const [modalConfig, setModalConfig] = useState<{ title: string, users: UserData[] } | null>(null);
     const [loadingModal, setLoadingModal] = useState(false);
+
+    // Pick Favorite State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!searchQuery) { setSearchResults([]); return; }
+        const timeout = setTimeout(() => {
+            api.get(`/media?search=${encodeURIComponent(searchQuery)}`)
+                .then(r => setSearchResults(r.data))
+                .catch(console.error);
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [searchQuery]);
+
+    const handleSetFavorite = async (media: any) => {
+        if (activePickSlot === null) return;
+        try {
+            await api.post(`/users/favorites`, { mediaId: media.id, slotInt: activePickSlot });
+            setProfile(p => {
+                if (!p) return p;
+                const copy = { ...p };
+                const filtered = copy.favoritePicks.filter(x => x.slotInt !== activePickSlot);
+                filtered.push({ id: media.id, slotInt: activePickSlot, media });
+                copy.favoritePicks = filtered;
+                return copy;
+            });
+        } catch (e) {
+            alert('Failed to set favorite pick.');
+        }
+        setActivePickSlot(null);
+        setSearchQuery("");
+    }
 
     const fetchProfile = () => {
         if (!username) return
@@ -441,56 +465,76 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Favorite Films */}
-                {profile.favorites && profile.favorites.length > 0 && (
-                    <div style={{ marginBottom: 40 }}>
-                        <h2 style={{ fontWeight: 700, marginBottom: 16, fontSize: '1rem', color: 'var(--color-text-muted)' }}>
-                            FAVORITE PICKS
-                        </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-                            {profile.favorites.map((entry, idx) => (
-                                <Link key={idx} to={`/media/${entry.media.id}`} style={{ textDecoration: 'none' }}>
-                                    <div style={{
-                                        aspectRatio: '2/3', background: 'var(--color-bg-card)',
-                                        border: '3px solid var(--color-border)',
-                                        borderRadius: 'var(--radius-none)',
-                                        overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: '4px 4px 0px var(--color-border)', position: 'relative',
-                                        transition: 'transform 0.1s, box-shadow 0.1s',
-                                    }}>
-                                        {entry.media.posterUrl ? (
-                                            <img src={entry.media.posterUrl} alt={entry.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <Film size={28} style={{ color: 'var(--color-text-dim)' }} />
-                                        )}
+                {/* Favorite Films */}
+                <div style={{ marginBottom: 40 }}>
+                    <h2 style={{ fontWeight: 700, marginBottom: 16, fontSize: '1rem', color: 'var(--color-text-muted)' }}>
+                        FAVORITE PICKS
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                        {[1, 2, 3, 4].map(slot => {
+                            const entry = profile.favoritePicks?.find(p => p.slotInt === slot);
+                            if (entry) {
+                                return (
+                                    <Link key={slot} to={`/media/${entry.media.id}`} style={{ textDecoration: 'none', position: 'relative' }}>
                                         <div style={{
-                                            position: 'absolute', top: 8, right: 8,
-                                            background: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: '50%',
-                                            cursor: isOwn ? 'pointer' : 'default',
-                                        }} onClick={(e) => { if (isOwn) { e.preventDefault(); e.stopPropagation(); handleUnlike(entry.id, e); } }}>
-                                            <Heart size={14} fill="#f43f5e" color="#f43f5e" />
+                                            aspectRatio: '2/3', background: 'var(--color-bg-card)',
+                                            border: '3px solid var(--color-border)',
+                                            borderRadius: 'var(--radius-none)',
+                                            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '4px 4px 0px var(--color-border)', position: 'relative',
+                                            transition: 'transform 0.1s, box-shadow 0.1s',
+                                        }}>
+                                            {entry.media.posterUrl ? (
+                                                <img src={entry.media.posterUrl} alt={entry.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <Film size={28} style={{ color: 'var(--color-text-dim)' }} />
+                                            )}
+                                            {isOwn && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        handleRemoveFavorite(slot);
+                                                    }}
+                                                    style={{
+                                                        position: 'absolute', top: -10, right: -10,
+                                                        background: 'var(--color-bg)', border: '2px solid var(--color-border)',
+                                                        width: 24, height: 24, borderRadius: '50%',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        cursor: 'pointer', zIndex: 10, color: 'var(--color-text)'
+                                                    }}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
                                         </div>
-                                    </div>
-                                    <p style={{
-                                        fontSize: '0.8rem', fontWeight: 700, marginTop: 8, color: 'var(--color-text)',
-                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                    }}>
-                                        {entry.media.title}
-                                    </p>
-                                </Link>
-                            ))}
-                            {[...Array(Math.max(0, 4 - profile.favorites.length))].map((_, i) => (
-                                <div key={`empty-${i}`} style={{
-                                    aspectRatio: '2/3', background: 'var(--color-bg-elevated)',
-                                    border: '3px dashed var(--color-border)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    opacity: 0.5
-                                }}>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Empty</span>
-                                </div>
-                            ))}
-                        </div>
+                                        <p style={{
+                                            fontSize: '0.8rem', fontWeight: 700, marginTop: 8, color: 'var(--color-text)',
+                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                        }}>
+                                            {entry.media.title}
+                                        </p>
+                                    </Link>
+                                );
+                            } else {
+                                return (
+                                    <button key={slot} style={{
+                                        aspectRatio: '2/3', background: 'transparent',
+                                        border: '3px dashed var(--color-border)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexDirection: 'column',
+                                        cursor: isOwn ? 'pointer' : 'default',
+                                        width: '100%',
+                                        opacity: 0.6,
+                                        outline: 'none',
+                                    }} onClick={() => isOwn && setActivePickSlot(slot)}>
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 700 }}>Empty</span>
+                                    </button>
+                                );
+                            }
+                        })}
                     </div>
-                )}
+                </div>
 
                 {/* Tabs */}
                 <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-border)', marginBottom: 28 }}>
@@ -548,6 +592,60 @@ export default function ProfilePage() {
                         window.location.reload();
                     }}
                 />
+            )}
+
+            {/* Favorite Pick Search Modal */}
+            {activePickSlot !== null && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999,
+                    display: 'flex', justifyContent: 'center', paddingTop: '10vh',
+                    backdropFilter: 'blur(4px)'
+                }} onClick={() => setActivePickSlot(null)}>
+                    <div style={{
+                        width: '100%', maxWidth: 600, background: 'var(--color-background)',
+                        border: '2px solid var(--color-primary)', boxShadow: '8px 8px 0 var(--color-primary)',
+                        height: 500, display: 'flex', flexDirection: 'column'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ padding: 20, borderBottom: '2px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <Search size={24} style={{ color: 'var(--color-primary)' }} />
+                            <input
+                                autoFocus
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="Search for a film, TV show, or song to add..."
+                                style={{
+                                    flex: 1, background: 'transparent', border: 'none',
+                                    outline: 'none', color: 'var(--color-text)', fontSize: '1.2rem',
+                                    fontWeight: 700
+                                }}
+                            />
+                            <button onClick={() => setActivePickSlot(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text)' }}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+                            {searchResults.length === 0 && searchQuery && (
+                                <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', marginTop: 20, fontWeight: 600 }}>No results found.</p>
+                            )}
+                            {searchResults.map(m => (
+                                <div key={m.id} onClick={() => handleSetFavorite(m)} style={{
+                                    display: 'flex', gap: 16, padding: '12px 16px', borderBottom: '1px solid var(--color-border)',
+                                    cursor: 'pointer', transition: 'background 0.1s', alignItems: 'center'
+                                }} onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-elevated)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                    <div style={{ width: 40, height: 60, background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+                                        {m.posterUrl && <img src={m.posterUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>{m.title}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: 4 }}>{m.releaseYear || ''} • {m.mediaType}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {modalConfig && (

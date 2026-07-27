@@ -60,6 +60,7 @@ model User {
   comments      Comment[]
   likes         Like[]
   activities    ActivityFeed[]
+  favoritePicks FavoritePick[]
 
   // Social
   followers  Follow[] @relation("Following")
@@ -95,10 +96,11 @@ model Media {
   songMetadata    SongMetadata?
 
   // User actions
-  diaryEntries DiaryEntry[]
-  reviews      Review[]
-  listItems    ListItem[]
-  comments     Comment[]
+  diaryEntries  DiaryEntry[]
+  reviews       Review[]
+  listItems     ListItem[]
+  comments      Comment[]
+  favoritePicks FavoritePick[]
 
   @@unique([externalId, externalSource])
   @@index([mediaType])
@@ -326,9 +328,24 @@ model ApiCache {
   cacheKey  String   @unique
   data      Json
   expiresAt DateTime
-  createdAt DateTime @default(now())
-
   @@index([cacheKey])
   @@index([expiresAt])
   @@map("api_cache")
+}
+
+// ─── FAVORITE PICKS ─────────────────────────────────────────
+
+model FavoritePick {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  slotInt   Int      // 1, 2, 3, or 4
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, slotInt])
+  @@index([userId])
+  @@map("favorite_picks")
 }

@@ -21,8 +21,7 @@ router.get("/feed", authMiddleware, async (req: AuthRequest, res: Response) => {
 
         const recentActivity = await prisma.diaryEntry.findMany({
             where: {
-                userId: { in: followingIds },
-                review: { not: null }
+                userId: { in: followingIds }
             },
             orderBy: { createdAt: "desc" },
             take: 20,
@@ -79,6 +78,10 @@ router.get("/:username", optionalAuthMiddleware, async (req: AuthRequest, res: R
             avatarUrl: true,
             bio: true,
             createdAt: true,
+            // @ts-ignore - Prisma generate fails to lock on windows dev
+            favoritePicks: {
+                include: { media: { select: { id: true, title: true, mediaType: true, posterUrl: true } } }
+            },
             _count: {
                 select: {
                     diaryEntries: true,
@@ -157,6 +160,7 @@ router.get("/:username", optionalAuthMiddleware, async (req: AuthRequest, res: R
         })
     ]);
 
+    // @ts-ignore
     user._count.reviews = reviewsCount;
 
     // Convert activity array into a dictionary: { "YYYY-MM-DD": count }
@@ -293,5 +297,48 @@ router.get("/:username/following", async (req: Request, res: Response) => {
     res.json(follows.map(f => f.following));
 });
 
+
+// POST /api/users/favorites — Set a favorite media pick
+router.post("/favorites", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const { mediaId, slotInt } = req.body;
+
+        if (![1, 2, 3, 4].includes(slotInt)) {
+            return res.status(400).json({ error: "Invalid slot number" });
+        }
+
+        if (!mediaId) {
+            // Delete if mediaId is null
+            // @ts-ignore
+            await prisma.favoritePick.deleteMany({
+                where: { userId: req.userId!, slotInt }
+            });
+            return res.json({ success: true });
+        }
+
+        // Upsert the favorite pick
+        // @ts-ignore
+        const pick = await prisma.favoritePick.upsert({
+            where: {
+                userId_slotInt: {
+                    userId: req.userId!,
+                    slotInt
+                }
+            },
+            update: { mediaId },
+            create: {
+                userId: req.userId!,
+                mediaId,
+                slotInt
+            },
+            include: { media: true }
+        });
+
+        res.json(pick);
+    } catch (e) {
+        console.error("Failed to set favorite pick", e);
+        res.status(500).json({ error: "Failed to set favorite" });
+    }
+});
 
 export default router;

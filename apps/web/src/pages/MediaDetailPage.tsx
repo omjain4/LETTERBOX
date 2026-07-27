@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
     Film, Tv, Music, PlayCircle, Star, Calendar, Plus, Heart,
-    Loader2, Clock, List
+    Loader2, Clock, List, Eye
 } from 'lucide-react'
 import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'
@@ -134,22 +134,90 @@ export default function MediaDetailPage() {
 
             {/* Content */}
             <div style={{ maxWidth: 1100, margin: '-120px auto 0', padding: '0 20px 60px', position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', gap: 32, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                    {/* Poster */}
-                    <div style={{
-                        width: 180, flexShrink: 0,
-                        borderRadius: 'var(--radius-lg)',
-                        overflow: 'hidden',
-                        border: '3px solid var(--color-border)',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-                        background: 'var(--color-bg-elevated)',
-                        aspectRatio: '2/3',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                        {media.posterUrl
-                            ? <img src={media.posterUrl} alt={media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <Icon size={48} style={{ color: 'var(--color-text-dim)' }} />
-                        }
+                <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    {/* Left Column (Poster + Actions) */}
+                    <div style={{ width: '100%', maxWidth: 220, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {/* Poster */}
+                        <div style={{
+                            width: '100%',
+                            borderRadius: 'var(--radius-lg)',
+                            overflow: 'hidden',
+                            border: '3px solid var(--color-border)',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                            background: 'var(--color-bg-elevated)',
+                            aspectRatio: '2/3',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            {media.posterUrl
+                                ? <img src={media.posterUrl} alt={media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                : <Icon size={48} style={{ color: 'var(--color-text-dim)' }} />
+                            }
+                        </div>
+
+                        {/* Action Panel */}
+                        <div style={{
+                            background: 'var(--color-bg-card)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '12px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12
+                        }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, textAlign: 'center' }}>
+                                <button
+                                    onClick={() => user ? setShowLog(true) : window.location.assign('/login')}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: media.userEntry ? '#00e054' : 'var(--color-text-muted)' }}
+                                >
+                                    <Eye size={22} color={media.userEntry ? '#00e054' : 'currentColor'} />
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}>Watch</span>
+                                </button>
+                                <button
+                                    onClick={() => user ? setShowLog(true) : window.location.assign('/login')}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: media.userEntry?.liked ? '#f43f5e' : 'var(--color-text-muted)' }}
+                                >
+                                    <Heart size={22} fill={media.userEntry?.liked ? '#f43f5e' : 'none'} color={media.userEntry?.liked ? '#f43f5e' : 'currentColor'} />
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}>Like</span>
+                                </button>
+                                <button
+                                    onClick={() => user ? setShowLog(true) : window.location.assign('/login')}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)' }}
+                                >
+                                    <Clock size={22} />
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}>Watchlist</span>
+                                </button>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 10, textAlign: 'center' }}>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rate</span>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 4 }}>
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                        <button
+                                            key={star}
+                                            onClick={() => user ? setShowLog(true) : window.location.assign('/login')}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                                        >
+                                            <Star
+                                                size={18}
+                                                fill={(media.userEntry?.rating ?? 0) >= star ? '#4ade80' : 'none'}
+                                                color={(media.userEntry?.rating ?? 0) >= star ? '#4ade80' : 'var(--color-text-dim)'}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => user ? setShowLog(true) : window.location.assign('/login')}
+                                className="btn btn-primary glow"
+                                style={{
+                                    width: '100%', fontSize: '0.85rem', padding: '10px 0',
+                                    marginTop: 4, fontWeight: 700
+                                }}
+                            >
+                                {media.userEntry ? 'Edit log or review' : 'Review or log...'}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Info */}
@@ -193,22 +261,6 @@ export default function MediaDetailPage() {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                            {user && (!media.userEntry || !media.userEntry.review) && (
-                                <button
-                                    onClick={() => setShowLog(true)}
-                                    className="btn btn-primary glow"
-                                    style={{ fontSize: '0.9rem', padding: '10px 22px' }}
-                                >
-                                    <Plus size={16} /> {media.userEntry ? 'Edit Log / Review' : 'Log / Review'}
-                                </button>
-                            )}
-                            {!user && (
-                                <Link to="/login" className="btn btn-primary" style={{ fontSize: '0.9rem', padding: '10px 22px' }}>
-                                    <Star size={16} /> Sign in to log
-                                </Link>
-                            )}
-                        </div>
                     </div>
                 </div>
 
