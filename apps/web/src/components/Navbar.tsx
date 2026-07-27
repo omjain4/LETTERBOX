@@ -46,15 +46,16 @@ export default function Navbar() {
                     flexShrink: 0,
                     color: "var(--color-text-invert)",
                 }}>
-                    <div style={{
-                        background: "var(--color-primary)",
-                        padding: "6px",
-                        border: "2px solid var(--color-border)",
-                        boxShadow: "2px 2px 0px var(--color-border)",
-                        display: "flex"
-                    }}>
-                        <img src="/mosiac-logo.png" alt="MOSIAC Logo" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-                    </div>
+                    <img
+                        src="/mosiac-logo.png"
+                        alt="MOSIAC Logo"
+                        style={{
+                            width: 32,
+                            height: 32,
+                            objectFit: 'contain',
+                            display: 'block'
+                        }}
+                    />
                     <span style={{
                         fontFamily: "var(--font-display)",
                         fontSize: "clamp(1.1rem, 4vw, 1.75rem)",
