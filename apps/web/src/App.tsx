@@ -11,6 +11,7 @@ import ListDetailPage from './pages/ListDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import CurtainLoader from './components/CurtainLoader'
 import { useAuth } from './stores/auth-context'
+import ExplorePage from './pages/ExplorePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -28,6 +29,7 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/explore" element={<ExplorePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/search" element={<SearchPage />} />

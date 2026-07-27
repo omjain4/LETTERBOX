@@ -42,6 +42,37 @@ router.get("/feed", authMiddleware, async (req: AuthRequest, res: Response) => {
     }
 });
 
+// GET /api/users/popular — Get popular users
+router.get("/popular", async (req: Request, res: Response) => {
+    try {
+        const popularUsers = await prisma.user.findMany({
+            take: 4,
+            include: {
+                _count: {
+                    select: { followers: true, reviews: true }
+                }
+            },
+            orderBy: {
+                followers: { _count: 'desc' }
+            }
+        });
+
+        const formatted = popularUsers.map(u => ({
+            id: u.id,
+            username: u.username,
+            displayName: u.displayName,
+            avatarUrl: u.avatarUrl,
+            followerCount: u._count.followers,
+            reviewCount: u._count.reviews
+        }));
+
+        res.json(formatted);
+    } catch (e) {
+        console.error("Failed to fetch popular users", e);
+        res.status(500).json({ error: "Failed to catch popular users" });
+    }
+});
+
 // GET /api/users/search?q= — Search for users
 router.get("/search", async (req: Request, res: Response) => {
     const q = req.query.q || "";

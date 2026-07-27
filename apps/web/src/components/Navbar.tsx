@@ -116,6 +116,9 @@ export default function Navbar() {
                             <Link to="/" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
                                 ACTIVITY
                             </Link>
+                            <Link to="/explore" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
+                                EXPLORE
+                            </Link>
                             <Link to="/diary" className="btn btn-primary">
                                 DIARY
                             </Link>
@@ -173,6 +176,7 @@ export default function Navbar() {
                     {user ? (
                         <>
                             <Link to="/" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>ACTIVITY</Link>
+                            <Link to="/explore" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>EXPLORE</Link>
                             <Link to="/diary" className="btn btn-primary" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>DIARY</Link>
                             <Link to="/lists" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>LISTS</Link>
                             <Link to={`/profile/${user.username}`} className="btn btn-ghost" style={{ color: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>PROFILE</Link>

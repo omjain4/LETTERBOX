@@ -1,11 +1,59 @@
 import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/database.js";
-import { authMiddleware, AuthRequest } from "../../middleware/auth.js";
+import { authMiddleware, optionalAuthMiddleware, AuthRequest } from "../../middleware/auth.js";
 
 const router = Router();
 
-// All diary routes require auth
+// ─── Public Explore Routes ──────────────────────────────────
+router.get("/explore/recent", optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const recentEntries = await prisma.diaryEntry.findMany({
+            where: { review: { not: "" }, rating: { not: null } },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            include: {
+                media: { select: { id: true, title: true, posterUrl: true } },
+                user: { select: { id: true, username: true, displayName: true, avatarUrl: true } }
+            }
+        });
+        res.json({ data: recentEntries });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch recent reviews" });
+    }
+});
+
+router.get("/explore/popular", optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const popularEntries = await prisma.diaryEntry.findMany({
+            where: { review: { not: "" } },
+            orderBy: { createdAt: 'desc' }, // A real app might order by like count, doing a simple sort for now
+            take: 10,
+            include: {
+                media: { select: { id: true, title: true, posterUrl: true, releaseYear: true } },
+                user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+                // @ts-ignore
+                likes: true
+            }
+        });
+
+        // Format likes and sort by like count
+        const formatted = popularEntries.map(entry => ({
+            ...entry,
+            // @ts-ignore
+            likeCount: entry.likes?.length || 0,
+            // @ts-ignore
+            likedByMe: req.userId ? entry.likes?.some(l => l.userId === req.userId) : false,
+            likes: undefined
+        })).sort((a, b) => b.likeCount - a.likeCount);
+
+        res.json({ data: formatted });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch popular reviews" });
+    }
+});
+
+// All other diary routes require auth
 router.use(authMiddleware);
 
 // ─── Validation ─────────────────────────────────────────────
