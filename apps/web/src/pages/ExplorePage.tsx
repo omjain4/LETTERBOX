@@ -1,39 +1,46 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Star, Heart, TrendingUp, Calendar, Award } from 'lucide-react'
+import { Star, Film, Loader2 } from 'lucide-react'
 import api from '../lib/api'
 
-type SortFilter = 'POPULAR' | 'RATING' | 'YEAR' | 'RECENT';
-
-// We will fetch popular media (already exists in HomePage)
-// We will fetch recent reviews
-// We will fetch popular reviews
-// We will fetch popular users
-
 export default function ExplorePage() {
-    const [popularMedia, setPopularMedia] = useState<any[]>([])
+    const [media, setMedia] = useState<any[]>([])
     const [recentReviews, setRecentReviews] = useState<any[]>([])
-    const [popularReviews, setPopularReviews] = useState<any[]>([])
     const [popularUsers, setPopularUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+
+    // Filters
+    const [type, setType] = useState('MOVIE')
+    const [genre, setGenre] = useState('')
+    const [year, setYear] = useState('')
+    const [sort, setSort] = useState('ratingCount')
+
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResults, setSearchResults] = useState<any[]>([])
     const [isSearching, setIsSearching] = useState(false)
-    const [sortFilter, setSortFilter] = useState<SortFilter>('POPULAR')
 
     useEffect(() => {
         const fetchExploreData = async () => {
+            setLoading(true);
             try {
-                const [mediaRes, recentRes, popReviewsRes, usersRes] = await Promise.all([
-                    api.get("/media/popular"),
-                    api.get("/diary/explore/recent"),
-                    api.get("/diary/explore/popular"),
-                    api.get("/users/popular")
+                const params = new URLSearchParams();
+                if (type) params.append('type', type);
+                if (genre) params.append('genre', genre);
+                if (year) params.append('year', year);
+                if (sort === 'ratingCount' || sort === 'avgRating' || sort === 'releaseYear') {
+                    params.append('sort', sort);
+                    params.append('order', 'desc');
+                }
+
+                const [mediaRes, recentRes, usersRes] = await Promise.all([
+                    api.get(`/media?${params.toString()}`).catch(() => ({ data: { data: [] } })),
+                    api.get("/diary/explore/recent").catch(() => ({ data: { data: [] } })),
+                    api.get("/users/popular").catch(() => ({ data: [] }))
                 ]);
-                setPopularMedia(mediaRes.data.data);
-                setRecentReviews(recentRes.data.data);
-                setPopularReviews(popReviewsRes.data.data);
-                setPopularUsers(usersRes.data);
+
+                setMedia(mediaRes?.data?.data || []);
+                setRecentReviews(recentRes?.data?.data || []);
+                setPopularUsers(usersRes?.data || []);
             } catch (err) {
                 console.error("Failed to load explore data", err);
             } finally {
@@ -41,7 +48,7 @@ export default function ExplorePage() {
             }
         };
         fetchExploreData();
-    }, []);
+    }, [type, genre, year, sort]);
 
     const performSearch = async (query: string) => {
         if (!query.trim()) {
@@ -57,28 +64,6 @@ export default function ExplorePage() {
             console.error("Search failed", error);
         }
     };
-
-    const getSortedMedia = () => {
-        let sorted = [...popularMedia];
-        if (sortFilter === 'RATING') {
-            sorted.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
-        } else if (sortFilter === 'YEAR') {
-            sorted.sort((a, b) => (b.releaseYear || 0) - (a.releaseYear || 0));
-        } else if (sortFilter === 'RECENT') {
-            sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        } else {
-            // POPULAR (default)
-            sorted.sort((a, b) => (b.ratingCount || 0) - (a.ratingCount || 0));
-        }
-        return sorted;
-    };
-    if (loading) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10vh' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Loading explore...</span>
-            </div>
-        )
-    }
 
     return (
         <div style={{
@@ -100,34 +85,43 @@ export default function ExplorePage() {
                 border: '1px solid var(--color-border)',
                 borderBottomWidth: 3
             }}>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Browse By</span>
-                    {(['POPULAR', 'RATING', 'YEAR', 'RECENT'] as SortFilter[]).map(filter => (
-                        <button
-                            key={filter}
-                            onClick={() => setSortFilter(filter)}
-                            style={{
-                                background: sortFilter === filter ? 'var(--color-primary)' : 'none',
-                                border: 'none',
-                                color: sortFilter === filter ? 'var(--color-text-invert)' : 'var(--color-text)',
-                                padding: '4px 8px',
-                                borderRadius: 'var(--radius-sm)',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            {filter}
-                            {filter === 'POPULAR' && <TrendingUp size={12} />}
-                            {filter === 'RATING' && <Star size={12} />}
-                            {filter === 'YEAR' && <Calendar size={12} />}
-                            {filter === 'RECENT' && <Award size={12} />}
-                        </button>
-                    ))}
+
+                    <select value={type} onChange={e => setType(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                        <option value="MOVIE">Movies</option>
+                        <option value="TV_SHOW">TV Shows</option>
+                        <option value="">All Types</option>
+                    </select>
+
+                    <select value={genre} onChange={e => setGenre(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                        <option value="">All Genres</option>
+                        <option value="Action">Action</option>
+                        <option value="Drama">Drama</option>
+                        <option value="Comedy">Comedy</option>
+                        <option value="Thriller">Thriller</option>
+                        <option value="Horror">Horror</option>
+                        <option value="Sci-Fi">Sci-Fi</option>
+                        <option value="Romance">Romance</option>
+                    </select>
+
+                    <select value={year} onChange={e => setYear(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                        <option value="">Any Year</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                        <option value="2021">2021</option>
+                        <option value="2020">2020</option>
+                        <option value="2010">2010s</option>
+                        <option value="2000">2000s</option>
+                    </select>
+
+                    <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: 'var(--color-bg-dark)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '4px', outline: 'none', cursor: 'pointer' }}>
+                        <option value="ratingCount">Most Popular</option>
+                        <option value="avgRating">Highest Rated</option>
+                        <option value="releaseYear">Newest Releases</option>
+                        <option value="createdAt">Recently Added</option>
+                    </select>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Find A Film</span>
@@ -157,208 +151,148 @@ export default function ExplorePage() {
                 </div>
             </div>
 
-            {isSearching ? (
-                <div style={{ marginBottom: 40 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
-                        <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                            Search Results for "{searchQuery}"
-                        </h2>
-                    </div>
-                    {searchResults.length === 0 ? (
-                        <p style={{ color: 'var(--color-text-muted)' }}>No results found.</p>
-                    ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
-                            {searchResults.map(media => (
-                                <Link to={`/media/${media.id}`} key={media.id} style={{ textDecoration: 'none' }}>
-                                    <div style={{
-                                        width: '100%',
-                                        aspectRatio: '2/3',
-                                        background: 'var(--color-bg-card)',
-                                        border: '2px solid var(--color-border)',
-                                        overflow: 'hidden',
-                                        position: 'relative'
-                                    }}>
-                                        {media.posterUrl ? (
-                                            <img src={media.posterUrl} alt={media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', padding: 8, textAlign: 'center', color: 'var(--color-text-dim)' }}>
-                                                {media.title}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ marginTop: 8 }}>
-                                        <h3 style={{ fontSize: '0.9rem', margin: '0 0 2px 0', color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{media.title}</h3>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                            {media.releaseYear || ''} • {media.mediaType}
+            {loading && !media.length ? (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10vh' }}>
+                    <Loader2 className="animate-spin" size={32} style={{ color: 'var(--color-primary)' }} />
+                </div>
+            ) : isSearching ? (
+                <div>
+                    <h2 style={{ fontSize: '1.2rem', marginBottom: 20, color: 'var(--color-text-muted)' }}>Search Results</h2>
+                    <div className="stagger-children" style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                        gap: 16
+                    }}>
+                        {searchResults.map(m => (
+                            <Link key={m._id || m.id} to={`/media/${m._id || m.id}`} style={{ textDecoration: 'none' }}>
+                                <div style={{
+                                    aspectRatio: '2/3',
+                                    background: 'var(--color-bg-elevated)',
+                                    marginBottom: 8,
+                                    border: '1px solid var(--color-border)',
+                                    boxShadow: '2px 2px 0px rgba(0,0,0,0.5)',
+                                }}>
+                                    {(m.posterUrl || m.thumbnailUrl) ? (
+                                        <img src={m.posterUrl || m.thumbnailUrl} alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Film size={24} style={{ color: 'var(--color-text-muted)' }} />
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                                    )}
+                                </div>
+                                <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{m.title}</h3>
+                            </Link>
+                        ))}
+                    </div>
                 </div>
             ) : (
-                <>
-                    {/* POPULAR FILMS THIS WEEK */}
-                    <div style={{ marginBottom: 40 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
-                            <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                                Popular Films This Week
-                            </h2>
-                            <button onClick={() => { setIsSearching(true); performSearch("popular"); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>MORE</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
+                    {/* Media Grid Section */}
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
+                            <h3 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', margin: 0 }}>
+                                DISCOVER FILMS
+                            </h3>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                            {getSortedMedia().slice(0, 4).map(media => (
-                                <Link to={`/media/${media.id}`} key={media.id} style={{ textDecoration: 'none' }}>
-                                    <div style={{
-                                        width: '100%',
-                                        aspectRatio: '2/3',
-                                        background: 'var(--color-bg-card)',
-                                        border: '2px solid var(--color-border)',
-                                        overflow: 'hidden',
-                                        position: 'relative'
-                                    }}>
-                                        {media.posterUrl ? (
-                                            <img src={media.posterUrl} alt={media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', padding: 8, textAlign: 'center', color: 'var(--color-text-dim)' }}>
-                                                {media.title}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 8 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#00e054', fontSize: '0.75rem', fontWeight: 700 }}>
-                                            <TrendingUp size={12} /> {media.ratingCount}
+                        {media.length === 0 ? (
+                            <div style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)' }}>No media matches these filters.</div>
+                        ) : (
+                            <div className="stagger-children" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                                gap: 16
+                            }}>
+                                {media.map(m => (
+                                    <Link key={m.id} to={`/media/${m.id}`} style={{ textDecoration: 'none' }}>
+                                        <div style={{
+                                            aspectRatio: '2/3',
+                                            background: 'var(--color-bg-elevated)',
+                                            marginBottom: 8,
+                                            border: '1px solid var(--color-border)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            {m.posterUrl ? (
+                                                <img src={m.posterUrl} alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Film size={24} style={{ color: 'var(--color-text-muted)' }} />
+                                                </div>
+                                            )}
+                                            {m.avgRating > 0 && (
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '16px 8px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    <Star size={10} fill="#00E054" stroke="none" />
+                                                    <span style={{ fontSize: '0.7rem', color: 'white', fontWeight: 600 }}>{m.avgRating.toFixed(1)}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#f9d976', fontSize: '0.75rem', fontWeight: 700 }}>
-                                            <Star size={12} fill="currentColor" /> {(media.avgRating || 0).toFixed(1)}
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* JUST REVIEWED... */}
-                    <div style={{ marginBottom: 40 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
-                            <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                                Just Reviewed...
-                            </h2>
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12 }}>
-                            {recentReviews.map(r => (
-                                <Link to={`/media/${r.media.id}`} key={r.id} style={{ flexShrink: 0 }}>
-                                    <div style={{
-                                        width: 70,
-                                        aspectRatio: '2/3',
-                                        background: 'var(--color-bg-card)',
-                                        border: '1px solid var(--color-border)',
-                                        overflow: 'hidden'
-                                    }}>
-                                        {r.media.posterUrl ? (
-                                            <img src={r.media.posterUrl} alt={r.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ fontSize: '0.5rem', padding: 4, color: 'var(--color-text-dim)', wordBreak: 'break-all' }}>{r.media.title}</div>
-                                        )}
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* BOTTOM TWO COLUMNS */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 32 }}>
-
-                        {/* POPULAR REVIEWS */}
-                        <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
-                                <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                                    Popular Reviews This Week
-                                </h2>
+                                        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{m.title}</h3>
+                                    </Link>
+                                ))}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                {popularReviews.map(r => (
-                                    <div key={r.id} style={{ display: 'flex', gap: 16 }}>
-                                        <Link to={`/media/${r.media.id}`} style={{ flexShrink: 0 }}>
-                                            <div style={{
-                                                width: 100,
-                                                aspectRatio: '2/3',
-                                                background: 'var(--color-bg-card)',
-                                                border: '1px solid var(--color-border)',
-                                                overflow: 'hidden'
-                                            }}>
-                                                {r.media.posterUrl && <img src={r.media.posterUrl} alt={r.media.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                        )}
+                    </div>
+
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
+                        {/* Users Section */}
+                        {popularUsers.length > 0 && (
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
+                                    <h3 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', margin: 0 }}>
+                                        POPULAR REVIEWERS
+                                    </h3>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {popularUsers.slice(0, 5).map(u => (
+                                        <Link key={u.id} to={`/profile/${u.username}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', textDecoration: 'none', color: 'inherit' }}>
+                                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.avatarUrl ? `url(${u.avatarUrl}) center/cover` : 'var(--color-primary)' }} />
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{u.username}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{u._count?.followers || 0} Followers</div>
                                             </div>
                                         </Link>
-                                        <div style={{ flex: 1, minWidth: 0, paddingBottom: 16, borderBottom: '1px solid var(--color-border)' }}>
-                                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px 0', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                                                <Link to={`/media/${r.media.id}`} style={{ color: 'var(--color-text)', textDecoration: 'none' }}>
-                                                    {r.media.title}
-                                                </Link>
-                                                {r.media.releaseYear && <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{r.media.releaseYear}</span>}
-                                            </h3>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                                                <Link to={`/profile/${r.user.username}`} style={{
-                                                    fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-text-muted)',
-                                                    textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6
-                                                }}>
-                                                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--color-bg-dark)', overflow: 'hidden' }}>
-                                                        {r.user.avatarUrl && <img src={r.user.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                                                    </div>
-                                                    {r.user.username}
-                                                </Link>
-                                                {r.rating > 0 && (
-                                                    <div style={{ display: 'flex', color: '#00e054', gap: 2 }}>
-                                                        {Array.from({ length: 5 }).map((_, i) => (
-                                                            <Star key={i} size={12} fill={i < r.rating ? 'currentColor' : 'none'} strokeWidth={i < r.rating ? 0 : 1.5} />
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <p style={{ fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--color-text)', marginBottom: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                                {r.review}
-                                            </p>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-dim)' }}>
-                                                <Heart size={14} fill={r.likedByMe ? '#f43f5e' : 'none'} color={r.likedByMe ? '#f43f5e' : 'currentColor'} />
-                                                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Like review • {r.likeCount || 0} likes</span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Recent Reviews Section */}
+                        {recentReviews.length > 0 && (
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
+                                    <h3 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', margin: 0 }}>
+                                        RECENT REVIEWS
+                                    </h3>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {recentReviews.slice(0, 5).map(r => (
+                                        <div key={r.id} style={{ display: 'flex', gap: 12, padding: 12, background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)' }}>
+                                            <Link to={`/media/${r.media.id}`} style={{ flexShrink: 0 }}>
+                                                <div style={{ width: 50, height: 75, background: r.media.posterUrl ? `url(${r.media.posterUrl}) center/cover` : 'var(--color-bg-dark)', border: '1px solid var(--color-border)' }} />
+                                            </Link>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                                    <Link to={`/profile/${r.user.username}`} style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text)', textDecoration: 'none' }}>{r.user.username}</Link>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)' }}>watched</span>
+                                                    <Link to={`/media/${r.media.id}`} style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text)', textDecoration: 'none' }}>{r.media.title}</Link>
+                                                </div>
+                                                <div style={{ display: 'flex', color: '#00E054', marginBottom: 6 }}>
+                                                    {Array.from({ length: 5 }).map((_, i) => (
+                                                        <Star key={i} size={10} fill={r.rating && i < r.rating ? "currentColor" : "none"} strokeWidth={r.rating && i < r.rating ? 0 : 1} stroke="currentColor" />
+                                                    ))}
+                                                </div>
+                                                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    {r.review}
+                                                </p>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-
-                        {/* SIDEBAR */}
-                        <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-border)', paddingBottom: 8, marginBottom: 16 }}>
-                                <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                                    POPULAR REVIEWERS
-                                </h2>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {popularUsers.map(user => (
-                                    <div key={user.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--color-border)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--color-bg-dark)', overflow: 'hidden' }}>
-                                                {user.avatarUrl && <img src={user.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                                            </div>
-                                            <div>
-                                                <Link to={`/profile/${user.username}`} style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text)', textDecoration: 'none', display: 'block' }}>
-                                                    {user.username}
-                                                </Link>
-                                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)' }}>
-                                                    {user.reviewCount} films, {user.followerCount} followers
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        )}
                     </div>
-                </>
+                </div>
             )}
         </div>
     )
