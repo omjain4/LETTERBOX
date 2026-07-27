@@ -3,7 +3,7 @@ import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import SearchPage from './pages/SearchPage'
+import ActivityPage from './pages/ActivityPage'
 import MediaDetailPage from './pages/MediaDetailPage'
 import DiaryPage from './pages/DiaryPage'
 import ListsPage from './pages/ListsPage'
@@ -32,7 +32,8 @@ export default function App() {
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/search" element={<SearchPage />} />
+        <Route path="/activity" element={<ActivityPage />} />
+        <Route path="/search" element={<HomePage />} />
         <Route path="/media/:id" element={<MediaDetailPage />} />
         <Route path="/diary" element={<ProtectedRoute><DiaryPage /></ProtectedRoute>} />
         <Route path="/lists" element={<ProtectedRoute><ListsPage /></ProtectedRoute>} />
