@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
     Film, Tv, Music, PlayCircle, Star, Calendar, Plus, Heart,
-    Loader2, Clock, List
+    Loader2, Clock, List, ThumbsUp, ThumbsDown, Trash2, MessageSquare, Send
 } from 'lucide-react'
 import api from '../lib/api'
 import { useAuth } from '../stores/auth-context'
@@ -29,6 +29,21 @@ interface MediaDetail {
         review: string | null
     }
     _count: { diaryEntries: number; reviews: number; listItems: number }
+}
+
+interface CommentData {
+    id: string
+    body: string
+    likeCount: number
+    dislikeCount: number
+    userVote: 'LIKE' | 'DISLIKE' | null
+    createdAt: string
+    user: {
+        id: string
+        username: string
+        displayName: string | null
+        avatarUrl: string | null
+    }
 }
 
 const MEDIA_ICONS: Record<string, React.ElementType> = {
@@ -64,6 +79,27 @@ export default function MediaDetailPage() {
     const [media, setMedia] = useState<MediaDetail | null>(null)
     const [loading, setLoading] = useState(true)
     const [showLog, setShowLog] = useState(false)
+    const [comments, setComments] = useState<CommentData[]>([])
+    const [commentBody, setCommentBody] = useState('')
+    const [commentsPage, setCommentsPage] = useState(1)
+    const [commentsTotalPages, setCommentsTotalPages] = useState(1)
+    const [commentsTotal, setCommentsTotal] = useState(0)
+    const [loadingComments, setLoadingComments] = useState(false)
+    const [postingComment, setPostingComment] = useState(false)
+
+    const fetchComments = (page: number, append = false) => {
+        if (!id) return
+        setLoadingComments(true)
+        api.get(`/comments/media/${id}?page=${page}&limit=10`)
+            .then(({ data }) => {
+                setComments(prev => append ? [...prev, ...data.data] : data.data)
+                setCommentsTotalPages(data.pagination.totalPages)
+                setCommentsTotal(data.pagination.total)
+                setCommentsPage(page)
+            })
+            .catch(() => { })
+            .finally(() => setLoadingComments(false))
+    }
 
     useEffect(() => {
         if (!id) return
@@ -71,6 +107,8 @@ export default function MediaDetailPage() {
             .then(({ data }) => setMedia(data))
             .catch(() => navigate('/'))
             .finally(() => setLoading(false))
+        // also fetch comments
+        fetchComments(1)
     }, [id])
 
     if (loading) return (
@@ -284,6 +322,206 @@ export default function MediaDetailPage() {
                         </div>
                     </div>
                 )}
+
+                {/* ─── Discussion Section ─── */}
+                <div style={{ marginTop: 48 }}>
+                    <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <MessageSquare size={20} style={{ color: 'var(--color-primary)' }} />
+                        Discussion
+                        <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>({commentsTotal})</span>
+                    </h2>
+
+                    {/* Comment Input */}
+                    {user ? (
+                        <div style={{
+                            display: 'flex', gap: 12, marginBottom: 32, alignItems: 'flex-start',
+                        }}>
+                            <div style={{
+                                width: 40, height: 40, borderRadius: '50%', background: 'var(--color-primary)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0,
+                            }}>
+                                {(user.displayName || user.username || '?')[0].toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <textarea
+                                    value={commentBody}
+                                    onChange={(e) => setCommentBody(e.target.value)}
+                                    placeholder="Add a comment..."
+                                    className="input"
+                                    style={{
+                                        minHeight: 60, resize: 'vertical',
+                                        border: '2px solid var(--color-border)',
+                                        boxShadow: '3px 3px 0px var(--color-border)',
+                                        fontSize: '0.9rem',
+                                    }}
+                                />
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                                    <button
+                                        className="btn btn-primary"
+                                        disabled={!commentBody.trim() || postingComment}
+                                        onClick={() => {
+                                            if (!commentBody.trim()) return
+                                            setPostingComment(true)
+                                            api.post(`/comments/media/${id}`, { body: commentBody.trim() })
+                                                .then(({ data }) => {
+                                                    setComments(prev => [data, ...prev])
+                                                    setCommentsTotal(prev => prev + 1)
+                                                    setCommentBody('')
+                                                })
+                                                .catch(() => { })
+                                                .finally(() => setPostingComment(false))
+                                        }}
+                                        style={{ padding: '8px 20px', fontSize: '0.85rem' }}
+                                    >
+                                        <Send size={14} /> {postingComment ? 'Posting...' : 'Comment'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{
+                            padding: '20px', marginBottom: 24, textAlign: 'center',
+                            border: '2px solid var(--color-border)',
+                            background: 'var(--color-bg-card)',
+                            boxShadow: '3px 3px 0px var(--color-border)',
+                        }}>
+                            <Link to="/login" style={{ fontWeight: 700, color: 'var(--color-primary)' }}>Sign in</Link> to join the discussion
+                        </div>
+                    )}
+
+                    {/* Comment List */}
+                    {comments.length === 0 && !loadingComments && (
+                        <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--color-text-muted)' }}>
+                            No comments yet. Be the first to share your thoughts!
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {comments.map((c) => (
+                            <div key={c.id} style={{
+                                display: 'flex', gap: 12, padding: '16px',
+                                background: 'var(--color-bg-card)',
+                                border: '2px solid var(--color-border)',
+                                boxShadow: '3px 3px 0px var(--color-border)',
+                            }}>
+                                <Link to={`/profile/${c.user.username}`} style={{ flexShrink: 0 }}>
+                                    <div style={{
+                                        width: 36, height: 36, borderRadius: '50%',
+                                        background: 'var(--color-bg-dark)', color: '#fff',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontWeight: 700, fontSize: '0.8rem',
+                                        overflow: 'hidden',
+                                    }}>
+                                        {c.user.avatarUrl
+                                            ? <img src={c.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            : (c.user.displayName || c.user.username)[0].toUpperCase()}
+                                    </div>
+                                </Link>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                                        <Link to={`/profile/${c.user.username}`} style={{
+                                            fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-text)',
+                                            textDecoration: 'none',
+                                        }}>
+                                            {c.user.displayName || c.user.username}
+                                        </Link>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)' }}>
+                                            {new Date(c.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                        </span>
+                                    </div>
+                                    <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--color-text)', marginBottom: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                        {c.body}
+                                    </p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <button
+                                            onClick={() => {
+                                                if (!user) return
+                                                api.post(`/comments/${c.id}/vote`, { voteType: 'LIKE' })
+                                                    .then(({ data }) => {
+                                                        setComments(prev => prev.map(cm => cm.id === c.id ? {
+                                                            ...cm,
+                                                            likeCount: cm.likeCount + (data.userVote === 'LIKE' ? 1 : -1) + (cm.userVote === 'DISLIKE' && data.userVote === 'LIKE' ? 0 : 0),
+                                                            dislikeCount: cm.userVote === 'DISLIKE' ? cm.dislikeCount - 1 : cm.dislikeCount,
+                                                            userVote: data.userVote,
+                                                        } : cm))
+                                                    })
+                                            }}
+                                            style={{
+                                                background: 'none', border: 'none', cursor: user ? 'pointer' : 'default',
+                                                display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem',
+                                                color: c.userVote === 'LIKE' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                                fontWeight: c.userVote === 'LIKE' ? 700 : 500,
+                                            }}
+                                        >
+                                            <ThumbsUp size={14} fill={c.userVote === 'LIKE' ? 'currentColor' : 'none'} /> {c.likeCount}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (!user) return
+                                                api.post(`/comments/${c.id}/vote`, { voteType: 'DISLIKE' })
+                                                    .then(({ data }) => {
+                                                        setComments(prev => prev.map(cm => cm.id === c.id ? {
+                                                            ...cm,
+                                                            dislikeCount: cm.dislikeCount + (data.userVote === 'DISLIKE' ? 1 : -1) + (cm.userVote === 'LIKE' && data.userVote === 'DISLIKE' ? 0 : 0),
+                                                            likeCount: cm.userVote === 'LIKE' ? cm.likeCount - 1 : cm.likeCount,
+                                                            userVote: data.userVote,
+                                                        } : cm))
+                                                    })
+                                            }}
+                                            style={{
+                                                background: 'none', border: 'none', cursor: user ? 'pointer' : 'default',
+                                                display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem',
+                                                color: c.userVote === 'DISLIKE' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                                fontWeight: c.userVote === 'DISLIKE' ? 700 : 500,
+                                            }}
+                                        >
+                                            <ThumbsDown size={14} fill={c.userVote === 'DISLIKE' ? 'currentColor' : 'none'} /> {c.dislikeCount}
+                                        </button>
+                                        {user && c.user.id === user.id && (
+                                            <button
+                                                onClick={() => {
+                                                    api.delete(`/comments/${c.id}`)
+                                                        .then(() => {
+                                                            setComments(prev => prev.filter(cm => cm.id !== c.id))
+                                                            setCommentsTotal(prev => prev - 1)
+                                                        })
+                                                }}
+                                                style={{
+                                                    background: 'none', border: 'none', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem',
+                                                    color: 'var(--color-danger)', marginLeft: 'auto',
+                                                }}
+                                            >
+                                                <Trash2 size={14} /> Delete
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Load More */}
+                    {commentsPage < commentsTotalPages && (
+                        <div style={{ textAlign: 'center', marginTop: 20 }}>
+                            <button
+                                className="btn btn-outline"
+                                onClick={() => fetchComments(commentsPage + 1, true)}
+                                disabled={loadingComments}
+                                style={{ fontSize: '0.85rem' }}
+                            >
+                                {loadingComments ? 'Loading...' : `Load More Comments`}
+                            </button>
+                        </div>
+                    )}
+
+                    {loadingComments && comments.length === 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+                            <Loader2 size={24} style={{ color: 'var(--color-primary)', animation: 'spin 1s linear infinite' }} />
+                        </div>
+                    )}
+                </div>
             </div>
 
             {showLog && media && (

@@ -98,6 +98,7 @@ model Media {
   diaryEntries DiaryEntry[]
   reviews      Review[]
   listItems    ListItem[]
+  comments     Comment[]
 
   @@unique([externalId, externalSource])
   @@index([mediaType])
@@ -269,17 +270,41 @@ model ActivityFeed {
 }
 
 model Comment {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewId  String
-  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  body      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId     String?
+  review       Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  mediaId      String?
+  media        Media?   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  body         String
+  likeCount    Int      @default(0)
+  dislikeCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  votes CommentVote[]
 
   @@index([reviewId])
+  @@index([mediaId])
   @@map("comments")
+}
+
+enum VoteType {
+  LIKE
+  DISLIKE
+}
+
+model CommentVote {
+  id        String   @id @default(uuid())
+  userId    String
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  voteType  VoteType
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
+  @@map("comment_votes")
 }
 
 model Like {

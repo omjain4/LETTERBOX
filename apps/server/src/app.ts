@@ -10,6 +10,7 @@ import searchRoutes from "./modules/search/routes.js";
 import diaryRoutes from "./modules/diary/routes.js";
 import listsRoutes from "./modules/lists/routes.js";
 import usersRoutes from "./modules/users/routes.js";
+import commentsRoutes from "./modules/comments/routes.js";
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use("/api/search", searchRoutes);
 app.use("/api/diary", diaryRoutes);
 app.use("/api/lists", listsRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/comments", commentsRoutes);
 
 // ─── Error Handler ──────────────────────────────────────────
 

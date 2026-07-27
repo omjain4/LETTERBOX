@@ -29,7 +29,7 @@ export function UserCard({ user, action }: UserCardProps) {
             border: '2px solid var(--color-border)',
             borderRadius: 'var(--radius-sm)'
         }}>
-            <Link to={`/u/${user.username}`} style={{
+            <Link to={`/profile/${user.username}`} style={{
                 width: 56,
                 height: 56,
                 borderRadius: '50%',
@@ -49,7 +49,7 @@ export function UserCard({ user, action }: UserCardProps) {
             </Link>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-                <Link to={`/u/${user.username}`} style={{ textDecoration: 'none' }}>
+                <Link to={`/profile/${user.username}`} style={{ textDecoration: 'none' }}>
                     <div style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {user.displayName || user.username}
                     </div>
