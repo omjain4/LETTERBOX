@@ -1,21 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Search, User, LogOut, Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { User, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../stores/auth-context";
 
 export default function Navbar() {
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState("");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-            setSearchQuery("");
-        }
-    };
 
     return (
         <nav style={{
@@ -67,44 +57,6 @@ export default function Navbar() {
                     </span>
                 </Link>
 
-                {/* Search Bar */}
-                <form onSubmit={handleSearch} style={{
-                    flex: 1,
-                    maxWidth: 300,
-                    minWidth: 0,
-                    position: "relative",
-                    display: "flex",
-                }}>
-                    <Search size={18} style={{
-                        position: "absolute",
-                        left: "clamp(8px, 2vw, 16px)",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: "var(--color-text)",
-                        pointerEvents: "none",
-                    }} />
-                    <input
-                        type="text"
-                        placeholder="SEARCH..." // Shorter for mobile
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="input"
-                        style={{
-                            paddingLeft: "clamp(32px, 8vw, 44px)",
-                            paddingRight: 8,
-                            background: "var(--color-bg)",
-                            borderRadius: 0,
-                            border: "2px solid var(--color-border)",
-                            boxShadow: "4px 4px 0px var(--color-border)",
-                            fontWeight: 600,
-                            height: 44,
-                            width: "100%",
-                            minWidth: 0,
-                            fontSize: "1rem"
-                        }}
-                    />
-                </form>
-
                 {/* Desktop Nav */}
                 <div style={{
                     display: "flex",
@@ -113,6 +65,9 @@ export default function Navbar() {
                 }} className="hidden-mobile">
                     {user ? (
                         <>
+                            <Link to="/" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
+                                HOME
+                            </Link>
                             <Link to="/" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
                                 ACTIVITY
                             </Link>
@@ -175,6 +130,7 @@ export default function Navbar() {
                 }}>
                     {user ? (
                         <>
+                            <Link to="/" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>HOME</Link>
                             <Link to="/" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>ACTIVITY</Link>
                             <Link to="/explore" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>EXPLORE</Link>
                             <Link to="/diary" className="btn btn-primary" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>DIARY</Link>

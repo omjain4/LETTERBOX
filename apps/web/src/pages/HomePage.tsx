@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Film, Tv, Music, PlayCircle, Star, Loader2 } from "lucide-react";
+import { Film, Tv, Music, PlayCircle, Star, Loader2, Search as SearchIcon } from "lucide-react";
 import { useAuth } from "../stores/auth-context";
 import { useEffect, useState } from "react";
 import api from "../lib/api";
@@ -38,6 +38,46 @@ export default function HomePage() {
                 <h1 style={{ textAlign: "center", fontSize: "clamp(1.5rem, 4vw, 2.5rem)", fontWeight: 400, color: "var(--color-text-muted)", marginBottom: 40 }}>
                     Welcome back, <span style={{ color: "var(--color-text)", fontWeight: 600 }}>{user.username}</span>. Here's what your friends have been watching...
                 </h1>
+
+                {/* Home Page Search Bar */}
+                <div style={{ marginBottom: 40 }}>
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            const query = new FormData(e.currentTarget).get('q');
+                            if (query) {
+                                window.location.href = `/search?q=${encodeURIComponent(query as string)}`;
+                            }
+                        }}
+                        style={{ position: "relative" }}
+                    >
+                        <SearchIcon size={20} style={{
+                            position: "absolute",
+                            left: 16,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            color: "var(--color-text-dim)",
+                            pointerEvents: "none",
+                        }} />
+                        <input
+                            type="text"
+                            name="q"
+                            className="input"
+                            placeholder="Search for movies, shows, songs, videos, users..."
+                            style={{
+                                paddingLeft: 48,
+                                height: 52,
+                                fontSize: "1.2rem",
+                                fontWeight: 700,
+                                background: "var(--color-bg-dark)",
+                                borderRadius: 0,
+                                border: "2px solid var(--color-border)",
+                                borderBottomWidth: 4,
+                                boxShadow: "none"
+                            }}
+                        />
+                    </form>
+                </div>
 
                 <div style={{ marginBottom: 40 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--color-border)", paddingBottom: 8, marginBottom: 16 }}>
