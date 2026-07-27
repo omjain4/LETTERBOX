@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SearchPage from './pages/SearchPage'
@@ -22,14 +23,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <CurtainLoader isLoading={isLoading} />
       <Navbar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={user ? <HomePage /> : <LandingPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/activity" element={<UserActivityPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -45,3 +46,4 @@ export default function App() {
     </div>
   )
 }
+
