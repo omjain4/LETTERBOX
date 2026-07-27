@@ -33,7 +33,7 @@ export default function ExplorePage() {
                 }
 
                 const [mediaRes, recentRes, usersRes] = await Promise.all([
-                    api.get(`/media?${params.toString()}`).catch(() => ({ data: { data: [] } })),
+                    api.get(`/media/discover?${params.toString()}`).catch(() => ({ data: { data: [] } })),
                     api.get("/diary/explore/recent").catch(() => ({ data: { data: [] } })),
                     api.get("/users/popular").catch(() => ({ data: [] }))
                 ]);
@@ -249,7 +249,7 @@ export default function ExplorePage() {
                                             <div style={{ width: 40, height: 40, borderRadius: '50%', background: u.avatarUrl ? `url(${u.avatarUrl}) center/cover` : 'var(--color-primary)' }} />
                                             <div>
                                                 <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{u.username}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{u._count?.followers || 0} Followers</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{u.followerCount || 0} Followers</div>
                                             </div>
                                         </Link>
                                     ))}

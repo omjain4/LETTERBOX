@@ -1,10 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { User, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../stores/auth-context";
 
 export default function Navbar() {
     const { user, logout } = useAuth();
+    const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
@@ -65,19 +66,19 @@ export default function Navbar() {
                 }} className="hidden-mobile">
                     {user ? (
                         <>
-                            <Link to="/" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
+                            <Link to="/" className={location.pathname === '/' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/' ? undefined : "var(--color-bg-card)", border: "none" }}>
                                 HOME
                             </Link>
-                            <Link to="/activity" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
+                            <Link to="/activity" className={location.pathname === '/activity' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/activity' ? undefined : "var(--color-bg-card)", border: "none" }}>
                                 ACTIVITY
                             </Link>
-                            <Link to="/explore" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
+                            <Link to="/explore" className={location.pathname === '/explore' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/explore' ? undefined : "var(--color-bg-card)", border: "none" }}>
                                 EXPLORE
                             </Link>
-                            <Link to="/diary" className="btn btn-primary">
+                            <Link to="/diary" className={location.pathname === '/diary' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/diary' ? undefined : "var(--color-bg-card)", border: "none" }}>
                                 DIARY
                             </Link>
-                            <Link to="/lists" className="btn btn-outline" style={{ background: "var(--color-bg-card)" }}>
+                            <Link to="/lists" className={location.pathname === '/lists' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/lists' ? undefined : "var(--color-bg-card)", border: "none" }}>
                                 LISTS
                             </Link>
                             <Link to={`/profile/${user.username}`} className="btn btn-ghost" style={{
@@ -130,11 +131,11 @@ export default function Navbar() {
                 }}>
                     {user ? (
                         <>
-                            <Link to="/" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>HOME</Link>
-                            <Link to="/" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>ACTIVITY</Link>
-                            <Link to="/explore" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>EXPLORE</Link>
-                            <Link to="/diary" className="btn btn-primary" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>DIARY</Link>
-                            <Link to="/lists" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>LISTS</Link>
+                            <Link to="/" className={location.pathname === '/' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/' ? undefined : "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>HOME</Link>
+                            <Link to="/activity" className={location.pathname === '/activity' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/activity' ? undefined : "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>ACTIVITY</Link>
+                            <Link to="/explore" className={location.pathname === '/explore' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/explore' ? undefined : "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>EXPLORE</Link>
+                            <Link to="/diary" className={location.pathname === '/diary' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/diary' ? undefined : "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>DIARY</Link>
+                            <Link to="/lists" className={location.pathname === '/lists' ? "btn btn-primary" : "btn btn-outline"} style={{ background: location.pathname === '/lists' ? undefined : "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>LISTS</Link>
                             <Link to={`/profile/${user.username}`} className="btn btn-ghost" style={{ color: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>PROFILE</Link>
                             <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="btn btn-ghost" style={{ color: "var(--color-primary)", justifyContent: "flex-start" }}>LOGOUT</button>
                         </>

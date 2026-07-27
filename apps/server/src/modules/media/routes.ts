@@ -8,6 +8,64 @@ const router = Router();
 
 // GET /api/media/:id — Get media by ID with metadata
 
+// GET /api/media/discover - Native TMDB Discovery
+router.get("/discover", async (req: Request, res: Response) => {
+    try {
+        const { type, genre, year, sort } = req.query;
+        if (!config.tmdb.apiKey) {
+            res.status(500).json({ error: 'TMDB not configured' });
+            return;
+        }
+
+        const isTv = type === 'TV_SHOW';
+        let endpoint = `${config.tmdb.baseUrl}/discover/${isTv ? 'tv' : 'movie'}`;
+        const url = new URL(endpoint);
+        url.searchParams.set('api_key', config.tmdb.apiKey);
+
+        let tmdbSort = 'popularity.desc';
+        if (sort === 'avgRating') tmdbSort = 'vote_average.desc';
+        if (sort === 'releaseYear') tmdbSort = isTv ? 'first_air_date.desc' : 'primary_release_date.desc';
+        url.searchParams.set('sort_by', tmdbSort);
+        url.searchParams.set('vote_count.gte', '50');
+
+        if (year) {
+            if (isTv) url.searchParams.set('first_air_date_year', year as string);
+            else url.searchParams.set('primary_release_year', year as string);
+        }
+
+        if (genre) {
+            const genreMap: Record<string, string> = {
+                'Action': isTv ? '10759' : '28',
+                'Drama': '18',
+                'Comedy': '35',
+                'Thriller': isTv ? '9648' : '53',
+                'Horror': isTv ? '9648' : '27',
+                'Sci-Fi': isTv ? '10765' : '878',
+                'Romance': isTv ? '18' : '10749'
+            };
+            const mappedId = genreMap[genre as string];
+            if (mappedId) url.searchParams.set('with_genres', mappedId);
+        }
+
+        const fetchRes = await fetch(url.toString());
+        if (!fetchRes.ok) throw new Error('TMDB failed');
+        const tmdbData = await fetchRes.json();
+
+        const formattedResults = (tmdbData.results || []).slice(0, 20).map((item: any) => ({
+            id: `tmdb-${item.id}`,
+            title: item.title || item.name,
+            mediaType: type || 'MOVIE',
+            posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+            avgRating: item.vote_average || 0
+        }));
+
+        res.json({ data: formattedResults });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed TMDB discover' });
+    }
+});
+
 router.get("/:id", optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
 
     try {
