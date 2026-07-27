@@ -1,3 +1,4 @@
+import { config } from '../../config/env.js';
 import { Router, Request, Response } from "express";
 import { prisma } from "../../config/database.js";
 import { authMiddleware, optionalAuthMiddleware, AuthRequest } from "../../middleware/auth.js";
@@ -347,6 +348,118 @@ router.post("/favorites", authMiddleware, async (req: AuthRequest, res: Response
             return res.json({ success: true });
         }
 
+        // Auto-ingest TMDB selections that haven't been tracked locally yet
+        let media = await prisma.media.findUnique({ where: { id: mediaId } });
+        if (!media && mediaId.startsWith("tmdb-")) {
+            const tmdbId = mediaId.replace("tmdb-", "");
+            const apiKey = config.tmdb.apiKey;
+            if (apiKey) {
+                let url = new URL(`${config.tmdb.baseUrl}/movie/${tmdbId}`);
+                url.searchParams.set("api_key", apiKey);
+                url.searchParams.set("append_to_response", "credits");
+                let tmdbRes = await fetch(url.toString());
+                let data: any = await (tmdbRes.ok ? tmdbRes.json() : null);
+                let type: "MOVIE" | "TV_SHOW" = "MOVIE";
+
+                if (!tmdbRes.ok || !data || data.status_code === 34) {
+                    url = new URL(`${config.tmdb.baseUrl}/tv/${tmdbId}`);
+                    url.searchParams.set("api_key", apiKey);
+                    url.searchParams.set("append_to_response", "credits");
+                    tmdbRes = await fetch(url.toString());
+                    data = (await (tmdbRes.ok ? tmdbRes.json() : null)) as any;
+                    type = "TV_SHOW";
+                }
+
+                if (data && tmdbRes.ok) {
+                    await prisma.media.create({
+                        data: {
+                            id: mediaId,
+                            externalId: String(data.id),
+                            externalSource: "TMDB",
+                            mediaType: type,
+                            title: type === "MOVIE" ? data.title : data.name,
+                            description: data.overview || null,
+                            posterUrl: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
+                            releaseYear: data.release_date ? parseInt(data.release_date.split("-")[0]) : (data.first_air_date ? parseInt(data.first_air_date.split("-")[0]) : null),
+                            runtimeMinutes: data.runtime || (data.episode_run_time && data.episode_run_time[0]) || null,
+                            genres: data.genres ? data.genres.map((g: any) => g.name) : [],
+                            avgRating: 0.0,
+                            ratingCount: 0,
+                            movieMetadata: type === "MOVIE" ? {
+                                create: {
+                                    tmdbId: String(data.id),
+                                    director: data.credits?.crew?.find((c: any) => c.job === "Director")?.name || null,
+                                    cast: data.credits?.cast?.slice(0, 5).map((c: any) => c.name) || [],
+                                    studio: data.production_companies?.[0]?.name || null,
+                                    imdbId: data.imdb_id || null,
+                                    tagline: data.tagline || null
+                                }
+                            } : undefined,
+                            tvShowMetadata: type === "TV_SHOW" ? {
+                                create: {
+                                    tmdbId: String(data.id),
+                                    seasonCount: data.number_of_seasons || 1,
+                                    episodeCount: data.number_of_episodes || null,
+                                    status: data.status || null,
+                                    network: data.networks?.[0]?.name || null
+                                }
+                            } : undefined
+                        }
+                    });
+                }
+            }
+        }
+
+        // Auto-ingest YouTube selections
+        if (!media && mediaId.startsWith("yt-")) {
+            const videoId = mediaId.replace("yt-", "");
+            const apiKey = config.youtube.apiKey;
+            if (apiKey) {
+                const url = new URL("https://www.googleapis.com/youtube/v3/videos");
+                url.searchParams.set("part", "snippet,contentDetails,statistics");
+                url.searchParams.set("id", videoId);
+                url.searchParams.set("key", apiKey);
+                const ytRes = await fetch(url.toString());
+                if (ytRes.ok) {
+                    const data: any = (await ytRes.json()) as any;
+                    if (data.items && data.items.length > 0) {
+                        const item = data.items[0];
+                        let durationSeconds = 0;
+                        const durationStr = item.contentDetails?.duration || "";
+                        const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+                        if (match) {
+                            durationSeconds = (parseInt(match[1] || "0", 10) * 3600) + (parseInt(match[2] || "0", 10) * 60) + parseInt(match[3] || "0", 10);
+                        }
+                        await prisma.media.create({
+                            data: {
+                                id: mediaId,
+                                externalId: videoId,
+                                externalSource: "YOUTUBE",
+                                mediaType: "YOUTUBE_VIDEO",
+                                title: item.snippet.title,
+                                description: item.snippet.description,
+                                posterUrl: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url || null,
+                                releaseYear: new Date(item.snippet.publishedAt).getFullYear(),
+                                runtimeMinutes: Math.floor(durationSeconds / 60) || null,
+                                youtubeMetadata: {
+                                    create: {
+                                        channelId: item.snippet.channelId,
+                                        channelName: item.snippet.channelTitle,
+                                        videoId: videoId,
+                                        isLiveStream: item.snippet.liveBroadcastContent !== "none",
+                                        viewCount: parseInt(item.statistics?.viewCount || "0", 10),
+                                        likeCount: parseInt(item.statistics?.likeCount || "0", 10),
+                                        durationSeconds,
+                                        thumbnailUrl: item.snippet.thumbnails?.high?.url || null,
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
         // Upsert the favorite pick
         // @ts-ignore
         const pick = await prisma.favoritePick.upsert({
@@ -373,3 +486,5 @@ router.post("/favorites", authMiddleware, async (req: AuthRequest, res: Response
 });
 
 export default router;
+
+
