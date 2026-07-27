@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Star, Heart, TrendingUp, Filter } from 'lucide-react'
 import api from '../lib/api'
 
@@ -14,6 +14,8 @@ export default function ExplorePage() {
     const [popularReviews, setPopularReviews] = useState<any[]>([])
     const [popularUsers, setPopularUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [searchQuery, setSearchQuery] = useState('')
+    const navigate = useNavigate()
 
     useEffect(() => {
         const fetchExploreData = async () => {
@@ -79,14 +81,24 @@ export default function ExplorePage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Find A Film</span>
-                    <input type="text" style={{
-                        background: 'var(--color-bg-dark)',
-                        border: '1px solid var(--color-border)',
-                        color: 'var(--color-text)',
-                        padding: '6px 12px',
-                        outline: 'none',
-                        fontSize: '0.8rem'
-                    }} />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && searchQuery.trim()) {
+                                navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                            }
+                        }}
+                        style={{
+                            background: 'var(--color-bg-dark)',
+                            border: '1px solid var(--color-border)',
+                            color: 'var(--color-text)',
+                            padding: '6px 12px',
+                            outline: 'none',
+                            fontSize: '0.8rem'
+                        }}
+                    />
                 </div>
             </div>
 
@@ -130,29 +142,7 @@ export default function ExplorePage() {
                 </div>
             </div>
 
-            {/* AD BANNER */}
-            <div style={{
-                background: 'linear-gradient(to right, #111, #222, #111)',
-                border: '1px solid var(--color-border)',
-                borderBottomWidth: 4,
-                padding: '24px',
-                textAlign: 'center',
-                marginBottom: 40,
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                <h2 style={{ color: '#f9d976', fontSize: '2rem', fontWeight: 900, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.02em', margin: 0 }}>
-                    AD-FREE. QUESTION. AMAZE. AMAZE. AMAZE.
-                </h2>
-                <p style={{ color: 'var(--color-text-muted)', margin: 0, fontWeight: 600 }}>
-                    Get annual and all-time stats, filtering by your favorite services, watchlist notifications and more...
-                </p>
-                <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)' }}>
-                    <span style={{ background: '#f43f5e', color: 'white', padding: '6px 12px', fontWeight: 800, fontSize: '0.9rem', border: '2px solid white', boxShadow: '2px 2px 0px white' }}>
-                        UPGRADE TO PRO
-                    </span>
-                </div>
-            </div>
+
 
             {/* JUST REVIEWED... */}
             <div style={{ marginBottom: 40 }}>
