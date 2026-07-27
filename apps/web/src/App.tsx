@@ -9,22 +9,22 @@ import DiaryPage from './pages/DiaryPage'
 import ListsPage from './pages/ListsPage'
 import ListDetailPage from './pages/ListDetailPage'
 import ProfilePage from './pages/ProfilePage'
+import CurtainLoader from './components/CurtainLoader'
 import { useAuth } from './stores/auth-context'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
-  if (isLoading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-      <div style={{ color: 'var(--color-text-muted)' }}>Loading…</div>
-    </div>
-  )
+  if (isLoading) return null; // We use the global CurtainLoader now
   if (!user) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
 export default function App() {
+  const { isLoading } = useAuth();
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+      <CurtainLoader isLoading={isLoading} />
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
