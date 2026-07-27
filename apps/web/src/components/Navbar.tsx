@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Film, User, LogOut, Menu, X } from "lucide-react";
+import { Search, User, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../stores/auth-context";
 
@@ -53,7 +53,7 @@ export default function Navbar() {
                         boxShadow: "2px 2px 0px var(--color-border)",
                         display: "flex"
                     }}>
-                        <Film size={20} strokeWidth={3} style={{ color: "var(--color-text-invert)" }} />
+                        <img src="/mosiac-logo.png" alt="MOSIAC Logo" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                     </div>
                     <span style={{
                         fontFamily: "var(--font-display)",
@@ -62,7 +62,7 @@ export default function Navbar() {
                         letterSpacing: "0.05em",
                         textTransform: "uppercase",
                     }}>
-                        LETTERBOX
+                        MOSIAC
                     </span>
                 </Link>
 

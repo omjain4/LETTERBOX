@@ -36,14 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem("letterbox_token");
+        const token = localStorage.getItem("mosiac_token");
         if (token) {
             api
                 .get("/auth/me")
                 .then(({ data }) => setUser(data.user))
                 .catch(() => {
-                    localStorage.removeItem("letterbox_token");
-                    localStorage.removeItem("letterbox_refresh_token");
+                    localStorage.removeItem("mosiac_token");
+                    localStorage.removeItem("mosiac_refresh_token");
                 })
                 .finally(() => setIsLoading(false));
         } else {
@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, password: string) => {
         const { data } = await api.post("/auth/login", { email, password });
-        localStorage.setItem("letterbox_token", data.accessToken);
-        localStorage.setItem("letterbox_refresh_token", data.refreshToken);
+        localStorage.setItem("mosiac_token", data.accessToken);
+        localStorage.setItem("mosiac_refresh_token", data.refreshToken);
         setUser(data.user);
     };
 
@@ -70,14 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password,
             displayName,
         });
-        localStorage.setItem("letterbox_token", data.accessToken);
-        localStorage.setItem("letterbox_refresh_token", data.refreshToken);
+        localStorage.setItem("mosiac_token", data.accessToken);
+        localStorage.setItem("mosiac_refresh_token", data.refreshToken);
         setUser(data.user);
     };
 
     const logout = () => {
-        localStorage.removeItem("letterbox_token");
-        localStorage.removeItem("letterbox_refresh_token");
+        localStorage.removeItem("mosiac_token");
+        localStorage.removeItem("mosiac_refresh_token");
         setUser(null);
     };
 

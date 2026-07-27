@@ -223,7 +223,7 @@ export default function HomePage() {
                 textAlign: "center",
             }}>
                 <h2 style={{ fontSize: "clamp(3rem, 8vw, 5rem)", letterSpacing: "-0.02em", color: "white", marginBottom: 20 }}>HELP YOUR CULTURE</h2>
-                <p style={{ color: "#AAAAAA", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.1em" }}>© 2026 Letterbox — The Official Tracker</p>
+                <p style={{ color: "#AAAAAA", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.1em" }}>© 2026 MOSIAC — The Official Tracker</p>
             </footer>
         </div>
     );

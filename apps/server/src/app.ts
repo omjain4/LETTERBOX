@@ -68,7 +68,7 @@ app.use(errorHandler);
 app.listen(config.port, "0.0.0.0", () => {
     console.log(`
   ╔══════════════════════════════════════════╗
-  ║   📦 Letterbox API Server               ║
+  ║   📦 MOSIAC API Server                  ║
   ║   🌐 Port: ${String(config.port).padEnd(28)}║
   ║   🔧 Env:  ${config.nodeEnv.padEnd(28)}║
   ║   ✅ Status: Running                    ║

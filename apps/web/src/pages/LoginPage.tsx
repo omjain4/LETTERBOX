@@ -45,7 +45,7 @@ export default function LoginPage() {
                     <Film size={36} style={{ color: "var(--color-primary)", marginBottom: 12 }} />
                     <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 6 }}>Welcome back</h1>
                     <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
-                        Sign in to your Letterbox account
+                        Sign in to your MOSIAC account
                     </p>
                 </div>
 
