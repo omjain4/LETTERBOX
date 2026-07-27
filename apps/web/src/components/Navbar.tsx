@@ -70,7 +70,7 @@ export default function Navbar() {
                 {/* Search Bar */}
                 <form onSubmit={handleSearch} style={{
                     flex: 1,
-                    maxWidth: 500,
+                    maxWidth: 300,
                     minWidth: 0,
                     position: "relative",
                     display: "flex",
@@ -113,8 +113,11 @@ export default function Navbar() {
                 }} className="hidden-mobile">
                     {user ? (
                         <>
+                            <Link to="/" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
+                                ACTIVITY
+                            </Link>
                             <Link to="/diary" className="btn btn-primary">
-                                TITLE LOG
+                                DIARY
                             </Link>
                             <Link to="/lists" className="btn btn-outline" style={{ background: "var(--color-bg-card)" }}>
                                 LISTS
@@ -169,7 +172,8 @@ export default function Navbar() {
                 }}>
                     {user ? (
                         <>
-                            <Link to="/diary" className="btn btn-primary" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>TITLE LOG</Link>
+                            <Link to="/" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start", border: "none" }} onClick={() => setMobileMenuOpen(false)}>ACTIVITY</Link>
+                            <Link to="/diary" className="btn btn-primary" style={{ justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>DIARY</Link>
                             <Link to="/lists" className="btn btn-outline" style={{ background: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>LISTS</Link>
                             <Link to={`/profile/${user.username}`} className="btn btn-ghost" style={{ color: "white", justifyContent: "flex-start" }} onClick={() => setMobileMenuOpen(false)}>PROFILE</Link>
                             <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="btn btn-ghost" style={{ color: "var(--color-primary)", justifyContent: "flex-start" }}>LOGOUT</button>

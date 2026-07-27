@@ -54,10 +54,11 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  diaryEntries  DiaryEntry[]
-  reviews       Review[]
-  lists         List[]
-  comments      Comment[]
+  diaryEntries    DiaryEntry[]
+  diaryEntryLikes DiaryEntryLike[]
+  reviews         Review[]
+  lists           List[]
+  comments        Comment[]
   likes         Like[]
   activities    ActivityFeed[]
   favoritePicks FavoritePick[]
@@ -178,14 +179,27 @@ model DiaryEntry {
   watchedDate DateTime @db.Date
   rating      Float?
   review      String?
-  tags        String[] @default([])
-  liked       Boolean  @default(false)
+  tags         String[] @default([])
+  liked        Boolean  @default(false)
+  likes        DiaryEntryLike[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([userId, watchedDate])
   @@index([mediaId])
   @@map("diary_entries")
+}
+
+model DiaryEntryLike {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diaryEntryId String
+  diaryEntry   DiaryEntry @relation(fields: [diaryEntryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, diaryEntryId])
+  @@map("diary_entry_likes")
 }
 
 // ─── REVIEWS ────────────────────────────────────────────────

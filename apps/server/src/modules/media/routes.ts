@@ -317,7 +317,7 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 // GET /api/media/:id/reviews — Get all reviews (diary entries with review text) for this media
-router.get("/:id/reviews", async (req: Request, res: Response) => {
+router.get("/:id/reviews", optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const id = String(req.params.id);
         const { page = "1", limit = "10" } = req.query;
@@ -338,7 +338,9 @@ router.get("/:id/reviews", async (req: Request, res: Response) => {
                             displayName: true,
                             avatarUrl: true,
                         }
-                    }
+                    },
+                    // @ts-ignore
+                    likes: true
                 }
             }),
             prisma.diaryEntry.count({
@@ -346,8 +348,17 @@ router.get("/:id/reviews", async (req: Request, res: Response) => {
             })
         ]);
 
+        const formattedReviews = reviews.map(r => ({
+            ...r,
+            // @ts-ignore
+            likeCount: r.likes?.length || 0,
+            // @ts-ignore
+            likedByMe: req.userId ? r.likes?.some(l => l.userId === req.userId) : false,
+            likes: undefined // do not send full array to client
+        }));
+
         res.json({
-            data: reviews,
+            data: formattedReviews,
             pagination: {
                 page: parseInt(page as string, 10),
                 limit: take,

@@ -215,7 +215,7 @@ export default function MediaDetailPage() {
                                     marginTop: 4, fontWeight: 700
                                 }}
                             >
-                                {media.userEntry ? 'Edit log or review' : 'Review or log...'}
+                                {media.userEntry?.review ? 'Edit your review' : media.userEntry ? 'Edit your log' : 'Review or log...'}
                             </button>
                         </div>
                     </div>
@@ -420,7 +420,30 @@ export default function MediaDetailPage() {
                                         {r.review}
                                     </p>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        {r.liked && <Heart size={14} fill="#f43f5e" color="#f43f5e" />}
+                                        <button
+                                            onClick={async () => {
+                                                if (!user) return window.location.assign('/login');
+                                                try {
+                                                    const res = await api.post(`/diary/${r.id}/like`);
+                                                    setReviews(prev => prev.map(rev =>
+                                                        rev.id === r.id
+                                                            ? { ...rev, likedByMe: res.data.liked, likeCount: (rev.likeCount || 0) + (res.data.liked ? 1 : -1) }
+                                                            : rev
+                                                    ));
+                                                } catch (e) { console.error(e) }
+                                            }}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: r.likedByMe ? '#f43f5e' : 'var(--color-text-dim)', padding: 0 }}
+                                        >
+                                            <Heart size={14} fill={r.likedByMe ? '#f43f5e' : 'none'} />
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{r.likeCount || 0}</span>
+                                        </button>
+
+                                        {r.liked && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#f43f5e', opacity: 0.7 }} title="This user liked the film">
+                                                <Heart size={12} fill="currentColor" />
+                                                <span style={{ fontSize: '0.7rem' }}>Liked film</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

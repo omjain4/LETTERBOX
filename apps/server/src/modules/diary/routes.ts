@@ -274,6 +274,38 @@ router.patch("/:id", async (req: AuthRequest, res: Response) => {
 });
 
 
+// POST /api/diary/:id/like — Toggle like on a diary entry (review)
+router.post("/:id/like", async (req: AuthRequest, res: Response) => {
+    try {
+        const diaryEntryId = req.params.id as string;
+        const userId = req.userId as string;
+
+        // @ts-ignore - Prisma client not generated locally due to EBUSY
+        const existingLike = await prisma.diaryEntryLike.findUnique({
+            where: {
+                userId_diaryEntryId: { userId, diaryEntryId }
+            }
+        });
+
+        if (existingLike) {
+            // @ts-ignore
+            await prisma.diaryEntryLike.delete({
+                where: { id: existingLike.id }
+            });
+            res.json({ liked: false });
+        } else {
+            // @ts-ignore
+            await prisma.diaryEntryLike.create({
+                data: { userId, diaryEntryId }
+            });
+            res.json({ liked: true });
+        }
+    } catch (e) {
+        console.error("Failed to toggle like", e);
+        res.status(500).json({ error: "Failed to toggle like" });
+    }
+});
+
 // DELETE /api/diary/:id
 router.delete("/:id", async (req: AuthRequest, res: Response) => {
     const existing = await prisma.diaryEntry.findFirst({

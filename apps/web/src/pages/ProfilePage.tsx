@@ -119,8 +119,8 @@ export default function ProfilePage() {
     useEffect(() => {
         if (!searchQuery) { setSearchResults([]); return; }
         const timeout = setTimeout(() => {
-            api.get(`/media?search=${encodeURIComponent(searchQuery)}`)
-                .then(r => setSearchResults(r.data))
+            api.get(`/search?q=${encodeURIComponent(searchQuery)}`)
+                .then(r => setSearchResults(r.data.data || []))
                 .catch(console.error);
         }, 300);
         return () => clearTimeout(timeout);
