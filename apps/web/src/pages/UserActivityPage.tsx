@@ -1,5 +1,5 @@
 ﻿import { Link } from "react-router-dom";
-import { Film, Tv, Music, PlayCircle, Star, Loader2, Search as SearchIcon } from "lucide-react";
+import { Film, Tv, Music, PlayCircle, Star, Loader2,  } from "lucide-react";
 import { useAuth } from "../stores/auth-context";
 import { useEffect, useState } from "react";
 import api from "../lib/api";

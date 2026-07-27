@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
-    Film, Tv, Music, PlayCircle, Star, Calendar, Plus, Heart,
+    Film, Tv, Music, PlayCircle, Star, Calendar, Heart,
     Loader2, Clock, List, Eye
 } from 'lucide-react'
 import api from '../lib/api'
