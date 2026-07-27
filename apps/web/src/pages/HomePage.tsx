@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Film, Tv, Music, PlayCircle, Star } from "lucide-react";
+import { Film, Tv, Music, PlayCircle, Star, Loader2 } from "lucide-react";
 import { useAuth } from "../stores/auth-context";
 import { useEffect, useState } from "react";
 import api from "../lib/api";
@@ -15,12 +15,20 @@ const MEDIA_CATEGORIES = [
 export default function HomePage() {
     const { user } = useAuth();
     const [feed, setFeed] = useState<any[]>([]);
+    const [popularMedia, setPopularMedia] = useState<any[]>([]);
+    const [loadingPopular, setLoadingPopular] = useState(false);
 
     useEffect(() => {
         if (user) {
             api.get("/users/feed")
                 .then(res => setFeed(res.data))
                 .catch(console.error);
+
+            setLoadingPopular(true);
+            api.get("/media?sort=ratingCount&order=desc&limit=5")
+                .then(res => setPopularMedia(res.data.data || []))
+                .catch(console.error)
+                .finally(() => setLoadingPopular(false));
         }
     }, [user]);
 
@@ -112,10 +120,77 @@ export default function HomePage() {
                             MORE
                         </Link>
                     </div>
-                    {/* Just fetching a few popular media using empty query or placeholder */}
-                    <div style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
-                        Check out the <Link to="/search" style={{ color: "var(--color-primary)" }}>Explore</Link> page to find popular items.
-                    </div>
+                    {loadingPopular ? (
+                        <div style={{ display: "flex", justifyContent: "center", padding: 40, color: "var(--color-primary)" }}>
+                            <Loader2 className="animate-spin" size={32} />
+                        </div>
+                    ) : popularMedia.length === 0 ? (
+                        <div style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+                            Check out the <Link to="/search" style={{ color: "var(--color-primary)" }}>Explore</Link> page to find popular items.
+                        </div>
+                    ) : (
+                        <div className="stagger-children" style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+                            gap: 20,
+                        }}>
+                            {popularMedia.map((media) => (
+                                <Link
+                                    key={media.id}
+                                    to={`/media/${media.id}`}
+                                    style={{ textDecoration: "none" }}
+                                >
+                                    <div className="card" style={{ overflow: "hidden" }}>
+                                        <div style={{
+                                            aspectRatio: "2/3",
+                                            background: "var(--color-bg-elevated)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            overflow: "hidden",
+                                        }}>
+                                            {media.posterUrl ? (
+                                                <img
+                                                    src={media.posterUrl}
+                                                    alt={media.title}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                />
+                                            ) : (
+                                                <Film size={40} style={{ color: "var(--color-text-dim)" }} />
+                                            )}
+                                        </div>
+                                        <div style={{ padding: 12 }}>
+                                            <span className={`badge badge-${media.mediaType.toLowerCase()}`} style={{ marginBottom: 6 }}>
+                                                {media.mediaType.replace("_", " ")}
+                                            </span>
+                                            <h3 style={{
+                                                fontSize: "0.85rem",
+                                                fontWeight: 600,
+                                                marginTop: 6,
+                                                display: "-webkit-box",
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: "vertical",
+                                                overflow: "hidden",
+                                            }}>
+                                                {media.title}
+                                            </h3>
+                                            {media.releaseYear && (
+                                                <span style={{ fontSize: "0.75rem", color: "var(--color-text-dim)" }}>
+                                                    {media.releaseYear}
+                                                </span>
+                                            )}
+                                            {media.avgRating > 0 && (
+                                                <div style={{ marginTop: 4, fontSize: "0.8rem" }}>
+                                                    <span style={{ color: "var(--color-accent)" }}>★</span>{" "}
+                                                    <span style={{ fontWeight: 600 }}>{media.avgRating.toFixed(1)}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         );

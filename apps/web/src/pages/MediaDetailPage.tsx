@@ -250,7 +250,7 @@ export default function MediaDetailPage() {
                 }}>
                     {[
                         { icon: Calendar, label: 'Logged', value: media._count.diaryEntries },
-                        { icon: Star, label: 'Reviews', value: media._count.reviews },
+                        { icon: Star, label: 'Reviews', value: reviewsTotal },
                         { icon: List, label: 'In Lists', value: media._count.listItems },
                     ].map(s => (
                         <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -401,7 +401,11 @@ export default function MediaDetailPage() {
                 <LogMediaModal
                     media={{ id: media.id, title: media.title, mediaType: media.mediaType, posterUrl: media.posterUrl }}
                     onClose={() => setShowLog(false)}
-                    onSuccess={() => setShowLog(false)}
+                    onSuccess={() => {
+                        setShowLog(false)
+                        api.get(`/media/${id}`).then(({ data }) => setMedia(data))
+                        fetchReviews(1)
+                    }}
                 />
             )}
         </div>
