@@ -68,7 +68,7 @@ export default function Navbar() {
                             <Link to="/" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
                                 HOME
                             </Link>
-                            <Link to="/" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
+                            <Link to="/activity" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>
                                 ACTIVITY
                             </Link>
                             <Link to="/explore" className="btn btn-outline" style={{ background: "var(--color-bg-card)", border: "none" }}>

@@ -1,5 +1,5 @@
 ﻿import { Link } from "react-router-dom";
-import { Film, Tv, Music, PlayCircle, Star, Loader2,  } from "lucide-react";
+import { Film, Tv, Music, PlayCircle, Star, Loader2, } from "lucide-react";
 import { useAuth } from "../stores/auth-context";
 import { useEffect, useState } from "react";
 import api from "../lib/api";
@@ -15,6 +15,7 @@ const MEDIA_CATEGORIES = [
 export default function ActivityPage() {
     const { user } = useAuth();
     const [feed, setFeed] = useState<any[]>([]);
+    const [myActivity, setMyActivity] = useState<any[]>([]);
     const [popularMedia, setPopularMedia] = useState<any[]>([]);
     const [loadingPopular, setLoadingPopular] = useState(false);
 
@@ -22,6 +23,10 @@ export default function ActivityPage() {
         if (user) {
             api.get("/users/feed")
                 .then(res => setFeed(res.data))
+                .catch(console.error);
+
+            api.get("/diary?limit=5")
+                .then(res => setMyActivity(res.data.data || []))
                 .catch(console.error);
 
             setLoadingPopular(true);
@@ -39,7 +44,61 @@ export default function ActivityPage() {
                     Welcome back, <span style={{ color: "var(--color-text)", fontWeight: 600 }}>{user.username}</span>. Here's what your friends have been watching...
                 </h1>
 
+                <div style={{ marginBottom: 40 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--color-border)", paddingBottom: 8, marginBottom: 16 }}>
+                        <h3 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)", margin: 0 }}>
+                            YOUR RECENT ACTIVITY
+                        </h3>
+                        <Link to="/diary" style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)", textDecoration: "none" }}>
+                            MY DIARY
+                        </Link>
+                    </div>
 
+                    {myActivity.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "40px", color: "var(--color-text-muted)" }}>
+                            <p>You haven't logged anything recently.</p>
+                            <Link to="/search" style={{ color: "var(--color-primary)", textDecoration: "none" }}>Log your first media</Link>
+                        </div>
+                    ) : (
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                            gap: 16
+                        }}>
+                            {myActivity.map(entry => (
+                                <div key={entry.id} style={{ display: "flex", flexDirection: "column" }}>
+                                    <Link to={`/media/${entry.media.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                                        <div style={{
+                                            aspectRatio: "2/3",
+                                            background: "var(--color-bg-elevated)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            overflow: "hidden",
+                                            border: "2px solid var(--color-border)",
+                                        }}>
+                                            {entry.media.posterUrl ? (
+                                                <img src={entry.media.posterUrl} alt={entry.media.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                            ) : (
+                                                <Film size={40} style={{ color: "var(--color-text-dim)" }} />
+                                            )}
+                                        </div>
+                                    </Link>
+                                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "0 2px" }}>
+                                        <div style={{ display: "flex", color: "#00E054" }}>
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <Star key={i} size={12} fill={entry.rating && i < entry.rating ? "currentColor" : "none"} strokeWidth={entry.rating && i < entry.rating ? 0 : 1} stroke="currentColor" />
+                                            ))}
+                                        </div>
+                                        <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                                            {format(new Date(entry.createdAt), "MMM d")}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 <div style={{ marginBottom: 40 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--color-border)", paddingBottom: 8, marginBottom: 16 }}>
