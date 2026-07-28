@@ -57,4 +57,36 @@ api.interceptors.response.use(
     }
 );
 
+// --- Lightweight Client-Side GET Caching ---
+// Prevents tab-flickering and unnecessary re-fetches when navigating back to recently loaded pages.
+const originalGet = api.get;
+const requestCache = new Map<string, { data: any, expiresAt: number, promise?: Promise<any> }>();
+
+api.get = async function (url: string, config?: any) {
+    // Generate a deterministic cache key based on URL and query params
+    const key = url + JSON.stringify(config?.params || {});
+    const cached = requestCache.get(key);
+
+    // If we have a valid cache hit, instantly resolve to eliminate React's loading state flicker
+    if (cached && Date.now() < cached.expiresAt) {
+        if (cached.promise) {
+            return cached.promise;
+        }
+        return Promise.resolve({ data: JSON.parse(JSON.stringify(cached.data)) }); // Deep clone to prevent state mutation bugs
+    }
+
+    // Capture the inflight promise to prevent simultaneous double-fetches
+    const fetchPromise = originalGet.call(this, url, config).then(res => {
+        requestCache.set(key, {
+            data: JSON.parse(JSON.stringify(res.data)),
+            expiresAt: Date.now() + (5 * 60 * 1000) // 5-minute TTL
+        });
+        return res;
+    });
+
+    requestCache.set(key, { data: null, expiresAt: Date.now() + (5 * 60 * 1000), promise: fetchPromise });
+
+    return fetchPromise;
+};
+
 export default api;
