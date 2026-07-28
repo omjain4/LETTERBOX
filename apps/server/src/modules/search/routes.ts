@@ -2,6 +2,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../../config/database.js";
 import { config } from "../../config/env.js";
+import { getCache, setCache } from "../../config/cache.js";
 
 const router = Router();
 
@@ -212,6 +213,13 @@ router.get("/", async (req: Request, res: Response) => {
         const queryStr = q.trim();
         const typeStr = type as string | undefined;
 
+        const cacheKey = `search_${typeStr || "ALL"}_${queryStr.toLowerCase()}_page${pageNum}_limit${take}`;
+        const cachedData = await getCache(cacheKey);
+        if (cachedData) {
+            res.json(cachedData);
+            return;
+        }
+
         let finalResults: any[] = [];
         let totalResults = 0;
 
@@ -255,7 +263,7 @@ router.get("/", async (req: Request, res: Response) => {
             totalResults = total;
         }
 
-        res.json({
+        const responsePayload = {
             data: finalResults,
             query: queryStr,
             pagination: {
@@ -264,7 +272,12 @@ router.get("/", async (req: Request, res: Response) => {
                 total: totalResults,
                 totalPages: Math.ceil(totalResults / take) || 1,
             },
-        });
+        };
+
+        // Cache results for 15 minutes (900 seconds)
+        await setCache(cacheKey, responsePayload, 900);
+
+        res.json(responsePayload);
     } catch (err) {
         console.error("Search error:", err);
         res.status(500).json({ error: "Search failed" });
@@ -272,3 +285,5 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 export default router;
+
+

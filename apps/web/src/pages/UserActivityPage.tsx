@@ -15,19 +15,25 @@ const MEDIA_CATEGORIES = [
 export default function ActivityPage() {
     const { user } = useAuth();
     const [feed, setFeed] = useState<any[]>([]);
+    const [loadingFeed, setLoadingFeed] = useState(true);
     const [myActivity, setMyActivity] = useState<any[]>([]);
+    const [loadingActivity, setLoadingActivity] = useState(true);
     const [popularMedia, setPopularMedia] = useState<any[]>([]);
     const [loadingPopular, setLoadingPopular] = useState(false);
 
     useEffect(() => {
         if (user) {
+            setLoadingFeed(true);
             api.get("/users/feed")
                 .then(res => setFeed(res.data))
-                .catch(console.error);
+                .catch(console.error)
+                .finally(() => setLoadingFeed(false));
 
+            setLoadingActivity(true);
             api.get("/diary?limit=5")
                 .then(res => setMyActivity(res.data.data || []))
-                .catch(console.error);
+                .catch(console.error)
+                .finally(() => setLoadingActivity(false));
 
             setLoadingPopular(true);
             api.get("/media?sort=ratingCount&order=desc&limit=5")
@@ -54,7 +60,11 @@ export default function ActivityPage() {
                         </Link>
                     </div>
 
-                    {myActivity.length === 0 ? (
+                    {loadingActivity ? (
+                        <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
+                            <Loader2 size={24} style={{ color: "var(--color-primary)", animation: "spin 1s linear infinite" }} />
+                        </div>
+                    ) : myActivity.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "40px", color: "var(--color-text-muted)" }}>
                             <p>You haven't logged anything recently.</p>
                             <Link to="/search" style={{ color: "var(--color-primary)", textDecoration: "none" }}>Log your first media</Link>
@@ -110,7 +120,11 @@ export default function ActivityPage() {
                         </Link>
                     </div>
 
-                    {feed.length === 0 ? (
+                    {loadingFeed ? (
+                        <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
+                            <Loader2 size={24} style={{ color: "var(--color-primary)", animation: "spin 1s linear infinite" }} />
+                        </div>
+                    ) : feed.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "40px", color: "var(--color-text-muted)" }}>
                             <p>No recent activity from your friends.</p>
                             <Link to="/search" style={{ color: "var(--color-primary)", textDecoration: "none" }}>Find users to follow</Link>
