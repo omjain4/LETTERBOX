@@ -221,6 +221,7 @@ router.get("/:username", optionalAuthMiddleware, async (req: AuthRequest, res: R
         favorites: favoriteFilms,
         activityData,
         userReviews,
+        isFollowing,
     });
 });
 
@@ -486,5 +487,6 @@ router.post("/favorites", authMiddleware, async (req: AuthRequest, res: Response
 });
 
 export default router;
+
 
 
