@@ -4,26 +4,28 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/shared/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController(text: 'omjain@gmail.com');
-  final _passwordController = TextEditingController(text: 'password123');
+class _SignupScreenState extends State<SignupScreen> {
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleSignup() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final success = await context.read<AuthProvider>().login(
+    final success = await context.read<AuthProvider>().signup(
+      _usernameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
@@ -33,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success) {
         context.go('/home');
       } else {
-        setState(() => _errorMessage = 'Invalid email or password. Please try again.');
+        setState(() => _errorMessage = 'Failed to create account. Username or email might be taken.');
       }
     }
   }
@@ -50,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Application Logo
                 Image.asset(
                   'assets/logo.png',
                   height: 60,
@@ -73,6 +74,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
+                TextField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'USERNAME',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.zero,
+                      borderSide: BorderSide(color: AppTheme.borderLight),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.zero,
+                      borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
                 TextField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -108,19 +125,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 32),
 
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
+                  onPressed: _isLoading ? null : _handleSignup,
                   child: _isLoading 
                       ? const SizedBox(
                           height: 20, 
                           width: 20, 
                           child: CircularProgressIndicator(color: AppTheme.textInvert, strokeWidth: 2)
                         )
-                      : const Text('LOGIN', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      : const Text('SIGN UP', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                 ),
                 const SizedBox(height: 24),
                 TextButton(
-                  onPressed: () => context.go('/signup'),
-                  child: const Text('Don\'t have an account? Sign Up', style: TextStyle(color: AppTheme.textMuted)),
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Already have an account? Log In', style: TextStyle(color: AppTheme.textMuted)),
                 ),
               ],
             ),
@@ -132,6 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();

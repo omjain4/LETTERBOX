@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/network/api_service.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/media_action_modal.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -103,21 +104,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
             itemCount: _results.length,
             itemBuilder: (context, index) {
               final media = _results[index];
-              return Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.borderLight),
+              return InkWell(
+                onTap: () => MediaActionModal.show(context, media),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.borderLight),
+                  ),
+                  child: media['posterUrl'] != null 
+                    ? CachedNetworkImage(
+                        imageUrl: media['posterUrl'],
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const ColoredBox(color: AppTheme.darkBackground),
+                        errorWidget: (context, url, err) => const Icon(Icons.broken_image),
+                      )
+                    : const ColoredBox(
+                        color: AppTheme.darkBackground,
+                        child: Center(
+                          child: Icon(Icons.movie, size: 40, color: AppTheme.textMuted),
+                        ),
+                      ),
                 ),
-                child: media['posterUrl'] != null 
-                  ? CachedNetworkImage(
-                      imageUrl: media['posterUrl'],
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => const ColoredBox(color: AppTheme.darkBackground),
-                      errorWidget: (context, url, err) => const Icon(Icons.broken_image),
-                    )
-                  : const ColoredBox(
-                      color: AppTheme.darkBackground,
-                      child: Icon(Icons.movie, color: AppTheme.textMuted),
-                    ),
               );
             },
           ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/network/api_service.dart';
+import 'package:mobile/core/network/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _user;
@@ -37,6 +37,26 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login(String email, String password) async {
     try {
       final response = await api.post('/auth/login', data: {
+        'email': email,
+        'password': password,
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('mosiac_token', response.data['accessToken']);
+      await prefs.setString('mosiac_refresh_token', response.data['refreshToken']);
+
+      _user = response.data['user'];
+      notifyListeners();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> signup(String username, String email, String password) async {
+    try {
+      final response = await api.post('/auth/register', data: {
+        'username': username,
         'email': email,
         'password': password,
       });

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/network/api_service.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/media_action_modal.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -97,9 +98,11 @@ class _SearchScreenState extends State<SearchScreen> {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return Container(
-                width: 120,
-                margin: const EdgeInsets.symmetric(horizontal: 4.0),
+              return InkWell(
+                onTap: () => MediaActionModal.show(context, item),
+                child: Container(
+                  width: 120,
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
                 decoration: BoxDecoration(
                   color: AppTheme.darkBackground,
                   border: Border.all(color: AppTheme.borderLight),
@@ -113,6 +116,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         errorWidget: (context, url, error) => const Icon(Icons.movie, color: AppTheme.textMuted),
                       )
                     : const Center(child: Icon(Icons.movie, size: 40, color: AppTheme.textMuted)),
+                ),
               );
             },
           ),

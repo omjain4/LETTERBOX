@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/network/api_service.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/media_action_modal.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({Key? key}) : super(key: key);
@@ -36,7 +37,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     }
   }
 
-  Widget _buildStars(int rating) {
+  Widget _buildStars(num rating) {
     return Row(
       children: List.generate(5, (index) {
         return Icon(
@@ -55,7 +56,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
         title: const Text('ACTIVITY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+        ? const Align(
+            alignment: Alignment.topCenter,
+            child: LinearProgressIndicator(color: AppTheme.primary, backgroundColor: Colors.transparent),
+          )
         : _feed.isEmpty 
           ? const Center(child: Text("No recent activity from your friends.", style: TextStyle(color: AppTheme.textMuted)))
           : ListView.builder(
@@ -69,14 +73,19 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
                 return Card(
                   color: AppTheme.darkBackground,
+                  clipBehavior: Clip.antiAlias,
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(color: AppTheme.borderLight),
                     borderRadius: BorderRadius.circular(0),
                   ),
                   margin: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                  child: InkWell(
+                    onTap: () {
+                      MediaActionModal.show(context, media);
+                    },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                       // Poster
                       SizedBox(
                         width: 100,
@@ -134,7 +143,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                               ],
                               if (hasReview)
                                 Text(
-                                  entry['review']['body'] ?? '',
+                                  entry['review'] ?? '',
                                   style: const TextStyle(color: AppTheme.textInvert, fontSize: 13),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -145,6 +154,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       )
                     ],
                   ),
+                  ), // End InkWell
                 );
               },
             ),
