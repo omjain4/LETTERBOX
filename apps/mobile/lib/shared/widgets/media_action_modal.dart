@@ -88,14 +88,14 @@ class _MediaActionModalState extends State<MediaActionModal> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Media logged successfully!', style: TextStyle(color: AppTheme.textInvert)), backgroundColor: AppTheme.success),
+          const SnackBar(content: Text('Media logged successfully!', style: TextStyle(color: AppTheme.textOnPrimary)), backgroundColor: AppTheme.success),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to log media', style: TextStyle(color: AppTheme.textInvert)), backgroundColor: AppTheme.primary),
+          const SnackBar(content: Text('Failed to log media', style: TextStyle(color: AppTheme.textOnPrimary)), backgroundColor: AppTheme.primary),
         );
       }
     }
@@ -234,7 +234,7 @@ class _MediaActionModalState extends State<MediaActionModal> {
             child: ElevatedButton(
               onPressed: _isSubmitting ? null : _submitReview,
               child: _isSubmitting 
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: AppTheme.textInvert, strokeWidth: 2))
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: AppTheme.textOnPrimary, strokeWidth: 2))
                   : const Text('SAVE', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 2)),
             ),
           )

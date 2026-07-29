@@ -130,7 +130,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ? const SizedBox(
                           height: 20, 
                           width: 20, 
-                          child: CircularProgressIndicator(color: AppTheme.textInvert, strokeWidth: 2)
+                          child: CircularProgressIndicator(color: AppTheme.textOnPrimary, strokeWidth: 2)
                         )
                       : const Text('SIGN UP', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                 ),
