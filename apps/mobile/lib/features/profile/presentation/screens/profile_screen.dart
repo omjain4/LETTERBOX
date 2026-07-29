@@ -224,10 +224,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: Text(_profile!['username'].toString().toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: AppTheme.textMuted),
+            icon: const Icon(Icons.logout, color: AppTheme.primary),
+            tooltip: 'Logout',
             onPressed: () {
-              // Sign out as rudimentary setting for now
-              context.read<AuthProvider>().logout();
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: AppTheme.darkBackground,
+                  title: const Text('LOGOUT', style: TextStyle(color: AppTheme.textInvert, letterSpacing: 2)),
+                  content: const Text('Are you sure you want to log out?', style: TextStyle(color: AppTheme.textMuted)),
+                  actions: [
+                    TextButton(
+                      child: const Text('CANCEL', style: TextStyle(color: AppTheme.textMuted)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    TextButton(
+                      child: const Text('LOGOUT', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.read<AuthProvider>().logout();
+                      },
+                    )
+                  ],
+                ),
+              );
             },
           )
         ],

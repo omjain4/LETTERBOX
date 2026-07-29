@@ -14,15 +14,24 @@ class DiaryScreen extends StatefulWidget {
   State<DiaryScreen> createState() => _DiaryScreenState();
 }
 
-class _DiaryScreenState extends State<DiaryScreen> {
+class _DiaryScreenState extends State<DiaryScreen> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
-  List<dynamic> _entries = [];
+  List<dynamic> _watchedEntries = [];
+  List<dynamic> _watchlistEntries = [];
   String? _error;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _fetchDiary();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchDiary() async {
@@ -34,7 +43,27 @@ class _DiaryScreenState extends State<DiaryScreen> {
       final response = await api.get('/users/$target/diary?limit=50');
       if (mounted) {
         setState(() {
-          _entries = response.data['data'] as List<dynamic>;
+          final allEntries = response.data['data'] as List<dynamic>;
+          
+          final uniqueMedia = <String, dynamic>{};
+          for (var entry in allEntries) {
+            final mediaId = entry['mediaId'].toString();
+            if (!uniqueMedia.containsKey(mediaId)) {
+              uniqueMedia[mediaId] = entry;
+            }
+          }
+          final uniqueEntries = uniqueMedia.values.toList();
+          
+          _watchlistEntries = uniqueEntries.where((e) {
+            final tags = e['tags'] as List<dynamic>?;
+            return tags != null && tags.contains('Watchlist');
+          }).toList();
+          
+          _watchedEntries = uniqueEntries.where((e) {
+            final tags = e['tags'] as List<dynamic>?;
+            return tags == null || !tags.contains('Watchlist');
+          }).toList();
+          
           _isLoading = false;
         });
       }
@@ -63,6 +92,92 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
+
+  Widget _buildList(List<dynamic> entries) {
+    if (entries.isEmpty) {
+      return const Center(child: Text('EMPTY', style: TextStyle(color: AppTheme.textMuted, letterSpacing: 1.5)));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        final media = entry['media'] ?? {};
+        final title = media['title'] ?? 'Unknown';
+        final year = media['releaseYear'] != null ? ' (${media['releaseYear']})' : '';
+        final hasReview = entry['review'] != null && entry['review'].toString().isNotEmpty;
+
+        return Card(
+          color: AppTheme.darkBackground,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AppTheme.borderLight),
+            borderRadius: BorderRadius.circular(0),
+          ),
+          margin: const EdgeInsets.only(bottom: 12),
+          child: InkWell(
+            onTap: () {
+              MediaActionModal.show(context, media, initialEntry: entry);
+            },
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 100,
+                  height: 150,
+                  child: media['posterUrl'] != null
+                      ? CachedNetworkImage(
+                          imageUrl: media['posterUrl'],
+                          fit: BoxFit.cover,
+                          errorWidget: (c, u, e) => const ColoredBox(color: AppTheme.background, child: Icon(Icons.movie, color: AppTheme.textMuted)),
+                        )
+                      : const ColoredBox(color: AppTheme.background, child: Icon(Icons.movie, color: AppTheme.textMuted)),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(text: title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textInvert)),
+                              TextSpan(text: year, style: const TextStyle(color: AppTheme.textMuted, fontSize: 14)),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            if (entry['rating'] != null) _buildStars(entry['rating']),
+                            const SizedBox(width: 8),
+                            if (entry['liked'] == true) const Icon(Icons.favorite, color: AppTheme.primary, size: 16),
+                          ],
+                        ),
+                        if (hasReview) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            entry['review'],
+                            style: const TextStyle(color: AppTheme.textInvert, fontSize: 13),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,92 +186,28 @@ class _DiaryScreenState extends State<DiaryScreen> {
         centerTitle: true,
         backgroundColor: AppTheme.background,
         elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppTheme.primary,
+          labelColor: AppTheme.primary,
+          unselectedLabelColor: AppTheme.textMuted,
+          tabs: const [
+            Tab(text: "WATCHED"),
+            Tab(text: "WATCHLIST"),
+          ],
+        ),
       ),
       body: _isLoading
           ? const Align(alignment: Alignment.topCenter, child: LinearProgressIndicator(color: AppTheme.primary, backgroundColor: AppTheme.darkBackground))
           : _error != null
               ? Center(child: Text(_error!, style: const TextStyle(color: AppTheme.primary)))
-              : _entries.isEmpty
-                  ? const Center(child: Text('YOUR DIARY IS EMPTY', style: TextStyle(color: AppTheme.textMuted, letterSpacing: 1.5)))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
-                      itemCount: _entries.length,
-                      itemBuilder: (context, index) {
-                        final entry = _entries[index];
-                        final media = entry['media'] ?? {};
-                        final title = media['title'] ?? 'Unknown';
-                        final year = media['releaseYear'] != null ? ' (${media['releaseYear']})' : '';
-                        final hasReview = entry['review'] != null && entry['review'].toString().isNotEmpty;
-
-                        return Card(
-                          color: AppTheme.darkBackground,
-                          clipBehavior: Clip.antiAlias,
-                          shape: RoundedRectangleBorder(
-                            side: const BorderSide(color: AppTheme.borderLight),
-                            borderRadius: BorderRadius.circular(0),
-                          ),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: InkWell(
-                            onTap: () {
-                              MediaActionModal.show(context, media);
-                            },
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 100,
-                                  height: 150,
-                                  child: media['posterUrl'] != null
-                                      ? CachedNetworkImage(
-                                          imageUrl: media['posterUrl'],
-                                          fit: BoxFit.cover,
-                                          errorWidget: (context, url, error) => const ColoredBox(color: AppTheme.background, child: Icon(Icons.movie, color: AppTheme.textMuted)),
-                                        )
-                                      : const ColoredBox(color: AppTheme.background, child: Icon(Icons.movie, color: AppTheme.textMuted)),
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text.rich(
-                                          TextSpan(
-                                            children: [
-                                              TextSpan(text: title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textInvert)),
-                                              TextSpan(text: year, style: const TextStyle(color: AppTheme.textMuted, fontSize: 14)),
-                                            ],
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            if (entry['rating'] != null) _buildStars(entry['rating']),
-                                            const SizedBox(width: 8),
-                                            if (entry['liked'] == true) const Icon(Icons.favorite, color: AppTheme.primary, size: 16),
-                                          ],
-                                        ),
-                                        if (hasReview) ...[
-                                          const SizedBox(height: 12),
-                                          Text(
-                                            entry['review'],
-                                            style: const TextStyle(color: AppTheme.textInvert, fontSize: 13),
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildList(_watchedEntries),
+                    _buildList(_watchlistEntries),
+                  ],
+                ),
     );
   }
 }

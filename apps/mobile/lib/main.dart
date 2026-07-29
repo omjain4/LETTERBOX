@@ -46,17 +46,17 @@ class _MosiacAppState extends State<MosiacApp> {
       refreshListenable: authProvider,
       redirect: (context, state) {
         final isLoggedIn = authProvider.isAuthenticated;
-        final isLoading = authProvider.isLoading;
+        final isSplash = state.matchedLocation == '/';
         final goingToLogin = state.matchedLocation == '/login';
         final goingToSignup = state.matchedLocation == '/signup';
 
-        if (isLoading) return '/'; // Stay on splash screen
+        if (isSplash) return null; // Let splash screen render and handle its own transition
         
         if (!isLoggedIn && !goingToLogin && !goingToSignup) {
           return '/login';
         }
         
-        if (isLoggedIn && (goingToLogin || goingToSignup || state.matchedLocation == '/')) {
+        if (isLoggedIn && (goingToLogin || goingToSignup)) {
           return '/home';
         }
         

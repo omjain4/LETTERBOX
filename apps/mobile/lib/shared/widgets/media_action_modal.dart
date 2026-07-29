@@ -4,15 +4,16 @@ import '../theme/app_theme.dart';
 
 class MediaActionModal extends StatefulWidget {
   final Map<String, dynamic> media;
+  final Map<String, dynamic>? initialEntry;
 
-  const MediaActionModal({Key? key, required this.media}) : super(key: key);
+  const MediaActionModal({Key? key, required this.media, this.initialEntry}) : super(key: key);
 
-  static void show(BuildContext context, Map<String, dynamic> media) {
+  static void show(BuildContext context, Map<String, dynamic> media, {Map<String, dynamic>? initialEntry}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => MediaActionModal(media: media),
+      builder: (context) => MediaActionModal(media: media, initialEntry: initialEntry),
     );
   }
 
@@ -27,6 +28,20 @@ class _MediaActionModalState extends State<MediaActionModal> {
   bool _isSubmitting = false;
   bool _isWatched = true;
   bool _inWatchlist = false;
+  bool _alreadyReviewed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialEntry != null) {
+      _rating = widget.initialEntry!['rating'] ?? 0;
+      _reviewController.text = widget.initialEntry!['review'] ?? '';
+      _liked = widget.initialEntry!['liked'] == true;
+      _inWatchlist = (widget.initialEntry!['tags'] as List?)?.contains('Watchlist') == true;
+      _isWatched = !_inWatchlist; // If only in watchlist, not watched.
+      _alreadyReviewed = _reviewController.text.isNotEmpty;
+    }
+  }
 
   Widget _buildActionButton(IconData icon, String label, bool isActive, VoidCallback onTap) {
     return InkWell(
@@ -160,6 +175,14 @@ class _MediaActionModalState extends State<MediaActionModal> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (_alreadyReviewed) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                        child: const Text('ALREADY REVIEWED', style: TextStyle(color: AppTheme.primary, fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     Row(
                       children: [

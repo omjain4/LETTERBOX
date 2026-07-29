@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -34,6 +37,18 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         _liftController.forward();
+      }
+    });
+
+    // Navigate when animation is done
+    Future.delayed(const Duration(milliseconds: 2200), () {
+      if (mounted) {
+        final auth = context.read<AuthProvider>();
+        if (auth.isAuthenticated) {
+          context.go('/home');
+        } else {
+          context.go('/login');
+        }
       }
     });
   }

@@ -40,33 +40,73 @@ class ScaffoldWithNav extends StatelessWidget {
     }
   }
 
+  Widget _buildNavItem(BuildContext context, int index, int selectedIndex, IconData icon, String label) {
+    final isSelected = index == selectedIndex;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _onItemTapped(index, context),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              decoration: isSelected 
+                ? BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.6),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      )
+                    ]
+                  )
+                : null,
+              child: Icon(
+                icon,
+                color: isSelected ? AppTheme.primary : AppTheme.textMuted,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppTheme.textInvert : AppTheme.textMuted,
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w400,
+                letterSpacing: 0.5,
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final selectedIdx = _calculateSelectedIndex(context);
     return Scaffold(
       body: child,
-      // Minimalist flat bottom bar mapping directly to web headers
       bottomNavigationBar: Container(
+        height: 65,
         decoration: const BoxDecoration(
+          color: AppTheme.darkBackground,
           border: Border(top: BorderSide(color: AppTheme.borderLight, width: 1)),
         ),
-        child: BottomNavigationBar(
-          backgroundColor: AppTheme.darkBackground,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppTheme.primary,
-          unselectedItemColor: AppTheme.textMuted,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          currentIndex: _calculateSelectedIndex(context),
-          onTap: (index) => _onItemTapped(index, context),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, letterSpacing: 0.5),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 11, letterSpacing: 0.5),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'HOME'),
-            BottomNavigationBarItem(icon: Icon(Icons.flash_on), label: 'ACTIVITY'),
-            BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'EXPLORE'),
-            BottomNavigationBarItem(icon: Icon(Icons.book), label: 'DIARY'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'PROFILE'),
-          ],
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              _buildNavItem(context, 0, selectedIdx, Icons.search, 'HOME'),
+              _buildNavItem(context, 1, selectedIdx, Icons.flash_on, 'ACTIVITY'),
+              _buildNavItem(context, 2, selectedIdx, Icons.explore, 'EXPLORE'),
+              _buildNavItem(context, 3, selectedIdx, Icons.book, 'DIARY'),
+              _buildNavItem(context, 4, selectedIdx, Icons.person, 'PROFILE'),
+            ],
+          ),
         ),
       ),
     );
