@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar, Film, Heart, ChevronLeft, ChevronRight, Loader2, Clock, Eye } from 'lucide-react'
 import api from '../lib/api'
+import LogMediaModal from '../components/LogMediaModal'
 
 interface DiaryEntry {
     id: string
@@ -23,13 +24,18 @@ export default function DiaryPage() {
     const [entries, setEntries] = useState<DiaryEntry[]>([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'watched' | 'watchlist'>('watched')
+    const [loggingEntry, setLoggingEntry] = useState<DiaryEntry | null>(null)
 
-    useEffect(() => {
+    const fetchDiary = () => {
         setLoading(true)
-        api.get('/diary', { params: { month, year, limit: 50 } })
+        api.get('/diary', { params: { month, year, limit: 50, t: Date.now() } })
             .then(({ data }) => setEntries(data.data))
             .catch(() => setEntries([]))
             .finally(() => setLoading(false))
+    }
+
+    useEffect(() => {
+        fetchDiary()
     }, [month, year])
 
     const prevMonth = () => {
@@ -209,11 +215,25 @@ export default function DiaryPage() {
                                                     </Link>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                         {activeTab === 'watchlist' && (
-                                                            <span style={{
-                                                                fontSize: '0.65rem', padding: '2px 8px',
-                                                                background: 'rgba(99,102,241,0.15)', color: '#818cf8',
-                                                                fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-                                                            }}>Watchlist</span>
+                                                            <>
+                                                                <span style={{
+                                                                    fontSize: '0.65rem', padding: '2px 8px',
+                                                                    background: 'rgba(99,102,241,0.15)', color: '#818cf8',
+                                                                    fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                                                }}>Watchlist</span>
+
+                                                                <button
+                                                                    onClick={() => setLoggingEntry(entry)}
+                                                                    style={{
+                                                                        fontSize: '0.65rem', padding: '2px 8px',
+                                                                        background: 'var(--color-primary)', color: '#fff',
+                                                                        fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                                                        border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, borderRadius: 2
+                                                                    }}
+                                                                >
+                                                                    <Eye size={12} /> Log
+                                                                </button>
+                                                            </>
                                                         )}
                                                         {entry.liked && <Heart size={14} fill="#f43f5e" color="#f43f5e" />}
                                                         {entry.rating && (
@@ -257,6 +277,24 @@ export default function DiaryPage() {
                     })}
                 </div>
             )}
+
+            {loggingEntry && (
+                <LogMediaModal
+                    media={loggingEntry.media}
+                    initialEntry={{
+                        rating: loggingEntry.rating || undefined,
+                        review: loggingEntry.review || undefined,
+                        liked: loggingEntry.liked,
+                        tags: loggingEntry.tags.filter(t => t !== 'Watchlist')
+                    }}
+                    onClose={() => setLoggingEntry(null)}
+                    onSuccess={() => {
+                        setLoggingEntry(null)
+                        fetchDiary()
+                    }}
+                />
+            )}
+
             <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
         </div>
     )
