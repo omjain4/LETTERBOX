@@ -174,7 +174,23 @@ export default function MediaDetailPage() {
                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}>Watch</span>
                                 </button>
                                 <button
-                                    onClick={() => user ? setShowLog(true) : window.location.assign('/login')}
+                                    onClick={async () => {
+                                        if (!user) return window.location.assign('/login')
+                                        try {
+                                            await api.post('/diary', {
+                                                mediaId: media.id,
+                                                watchedDate: media.userEntry?.watchedDate || new Date().toISOString().split('T')[0],
+                                                liked: !media.userEntry?.liked,
+                                                rating: media.userEntry?.rating ?? undefined,
+                                                review: media.userEntry?.review ?? undefined,
+                                                tags: media.userEntry?.tags ?? [],
+                                            })
+                                            const { data } = await api.get(`/media/${id}`)
+                                            setMedia(data)
+                                        } catch (err) {
+                                            console.error('Failed to toggle like', err)
+                                        }
+                                    }}
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: media.userEntry?.liked ? '#f43f5e' : 'var(--color-text-muted)' }}
                                 >
                                     <Heart size={22} fill={media.userEntry?.liked ? '#f43f5e' : 'none'} color={media.userEntry?.liked ? '#f43f5e' : 'currentColor'} />
