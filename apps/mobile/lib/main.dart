@@ -10,6 +10,7 @@ import 'features/search/presentation/screens/search_screen.dart';
 import 'features/explore/presentation/screens/explore_screen.dart';
 import 'features/activity/presentation/screens/activity_screen.dart';
 import 'features/diary/presentation/screens/diary_screen.dart';
+import 'features/lists/presentation/screens/lists_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/scaffold/presentation/scaffold_with_nav.dart';
 import 'shared/theme/app_theme.dart';
@@ -110,6 +111,15 @@ class _MosiacAppState extends State<MosiacApp> {
               pageBuilder: (context, state) => CustomTransitionPage(
                 key: state.pageKey,
                 child: const DiaryScreen(),
+                transitionsBuilder: (c, a, s, child) => FadeTransition(opacity: a, child: child),
+                transitionDuration: const Duration(milliseconds: 150),
+              ),
+            ),
+            GoRoute(
+              path: '/lists',
+              pageBuilder: (context, state) => CustomTransitionPage(
+                key: state.pageKey,
+                child: const ListsScreen(),
                 transitionsBuilder: (c, a, s, child) => FadeTransition(opacity: a, child: child),
                 transitionDuration: const Duration(milliseconds: 150),
               ),

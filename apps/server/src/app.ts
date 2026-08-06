@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { config } from "./config/env.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -15,6 +17,16 @@ import commentsRoutes from "./modules/comments/routes.js";
 const app = express();
 
 // ─── Global Middleware ──────────────────────────────────────
+app.use(helmet()); // Protect against known vulnerabilities by setting security HTTP headers
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1500, // limit each IP to 1500 requests per windowMs
+    message: { error: "Too many requests from this IP, please try again later." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use(limiter); // Apply rate limiting to all requests
 
 app.use((req, res, next) => {
     const allowedOrigins = ['http://localhost:5173', 'https://letterbox-web.vercel.app'];

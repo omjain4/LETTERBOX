@@ -16,7 +16,8 @@ class ScaffoldWithNav extends StatelessWidget {
     if (location.startsWith('/activity')) return 1;
     if (location.startsWith('/explore')) return 2;
     if (location.startsWith('/diary')) return 3;
-    if (location.startsWith('/profile')) return 4;
+    if (location.startsWith('/lists')) return 4;
+    if (location.startsWith('/profile')) return 5;
     return 0;
   }
 
@@ -35,6 +36,9 @@ class ScaffoldWithNav extends StatelessWidget {
         context.go('/diary');
         break;
       case 4:
+        context.go('/lists');
+        break;
+      case 5:
         context.go('/profile');
         break;
     }
@@ -104,7 +108,8 @@ class ScaffoldWithNav extends StatelessWidget {
               _buildNavItem(context, 1, selectedIdx, Icons.flash_on, 'ACTIVITY'),
               _buildNavItem(context, 2, selectedIdx, Icons.explore, 'EXPLORE'),
               _buildNavItem(context, 3, selectedIdx, Icons.book, 'DIARY'),
-              _buildNavItem(context, 4, selectedIdx, Icons.person, 'PROFILE'),
+              _buildNavItem(context, 4, selectedIdx, Icons.list, 'LISTS'),
+              _buildNavItem(context, 5, selectedIdx, Icons.person, 'PROFILE'),
             ],
           ),
         ),

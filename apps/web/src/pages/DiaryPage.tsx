@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Film, Heart, ChevronLeft, ChevronRight, Loader2} from 'lucide-react'
+import { Calendar, Film, Heart, ChevronLeft, ChevronRight, Loader2, Clock, Eye } from 'lucide-react'
 import api from '../lib/api'
 
 interface DiaryEntry {
@@ -10,6 +10,7 @@ interface DiaryEntry {
     review: string | null
     tags: string[]
     liked: boolean
+    mediaId: string
     media: { id: string; title: string; mediaType: string; posterUrl: string | null; releaseYear: number | null }
 }
 
@@ -21,6 +22,7 @@ export default function DiaryPage() {
     const [month, setMonth] = useState(now.getMonth() + 1)
     const [entries, setEntries] = useState<DiaryEntry[]>([])
     const [loading, setLoading] = useState(true)
+    const [activeTab, setActiveTab] = useState<'watched' | 'watchlist'>('watched')
 
     useEffect(() => {
         setLoading(true)
@@ -39,9 +41,23 @@ export default function DiaryPage() {
         else setMonth(m => m + 1)
     }
 
-    // Group entries by day
+    // Deduplicate by mediaId (keep latest)
+    const deduped = Object.values(
+        entries.reduce<Record<string, DiaryEntry>>((acc, e) => {
+            const mid = e.mediaId || e.media?.id
+            if (!acc[mid]) acc[mid] = e
+            return acc
+        }, {})
+    )
+
+    // Split into WATCHED vs WATCHLIST
+    const watchedEntries = deduped.filter(e => !e.tags?.includes('Watchlist'))
+    const watchlistEntries = deduped.filter(e => e.tags?.includes('Watchlist'))
+    const displayEntries = activeTab === 'watched' ? watchedEntries : watchlistEntries
+
+    // Group by day
     const byDay: Record<string, DiaryEntry[]> = {}
-    entries.forEach(e => {
+    displayEntries.forEach(e => {
         const day = new Date(e.watchedDate).toISOString().split('T')[0]
         if (!byDay[day]) byDay[day] = []
         byDay[day].push(e)
@@ -51,13 +67,13 @@ export default function DiaryPage() {
     return (
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 20px' }}>
             {/* Header */}
-            <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+            <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
                         Your <span className="gradient-text">Diary</span>
                     </h1>
                     <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginTop: 4 }}>
-                        {entries.length} entr{entries.length !== 1 ? 'ies' : 'y'} this month
+                        {displayEntries.length} entr{displayEntries.length !== 1 ? 'ies' : 'y'} this month
                     </p>
                 </div>
 
@@ -80,6 +96,39 @@ export default function DiaryPage() {
                 </div>
             </div>
 
+            {/* WATCHED / WATCHLIST Tabs */}
+            <div style={{
+                display: 'flex', gap: 0, marginBottom: 28,
+                border: '2px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
+            }}>
+                {(['watched', 'watchlist'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                            flex: 1, padding: '12px 0',
+                            border: 'none', cursor: 'pointer',
+                            fontWeight: 800, fontSize: '0.8rem',
+                            letterSpacing: '0.1em', textTransform: 'uppercase',
+                            background: activeTab === tab ? 'var(--color-primary)' : 'transparent',
+                            color: activeTab === tab ? '#fff' : 'var(--color-text-muted)',
+                            transition: 'all 0.15s ease',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        }}
+                    >
+                        {tab === 'watched' ? <Eye size={14} /> : <Clock size={14} />}
+                        {tab}
+                        <span style={{
+                            background: activeTab === tab ? 'rgba(255,255,255,0.25)' : 'var(--color-bg-elevated)',
+                            padding: '2px 8px', borderRadius: 20, fontSize: '0.7rem',
+                        }}>
+                            {tab === 'watched' ? watchedEntries.length : watchlistEntries.length}
+                        </span>
+                    </button>
+                ))}
+            </div>
+
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
                     <Loader2 size={28} style={{ color: 'var(--color-primary)', animation: 'spin 1s linear infinite' }} />
@@ -88,13 +137,21 @@ export default function DiaryPage() {
                 <div className="card" style={{
                     padding: 60, textAlign: 'center', color: 'var(--color-text-muted)',
                 }}>
-                    <Calendar size={48} style={{ marginBottom: 16, opacity: 0.3 }} />
-                    <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>No entries this month</p>
+                    {activeTab === 'watched' ? (
+                        <Eye size={48} style={{ marginBottom: 16, opacity: 0.3 }} />
+                    ) : (
+                        <Clock size={48} style={{ marginBottom: 16, opacity: 0.3 }} />
+                    )}
+                    <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                        {activeTab === 'watched' ? 'No entries this month' : 'Your watchlist is empty'}
+                    </p>
                     <p style={{ fontSize: '0.85rem', marginTop: 6 }}>
-                        Search for media and log it to your diary.
+                        {activeTab === 'watched'
+                            ? 'Search for media and log it to your diary.'
+                            : 'Add media to your watchlist from search or media pages.'}
                     </p>
                     <Link to="/search" className="btn btn-primary" style={{ marginTop: 20, display: 'inline-flex' }}>
-                        Find something to watch
+                        Find something to {activeTab === 'watched' ? 'watch' : 'add'}
                     </Link>
                 </div>
             ) : (
@@ -151,6 +208,13 @@ export default function DiaryPage() {
                                                         )}
                                                     </Link>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        {activeTab === 'watchlist' && (
+                                                            <span style={{
+                                                                fontSize: '0.65rem', padding: '2px 8px',
+                                                                background: 'rgba(99,102,241,0.15)', color: '#818cf8',
+                                                                fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                                            }}>Watchlist</span>
+                                                        )}
                                                         {entry.liked && <Heart size={14} fill="#f43f5e" color="#f43f5e" />}
                                                         {entry.rating && (
                                                             <span style={{ color: 'var(--color-accent)', fontWeight: 700, fontSize: '0.9rem' }}>
@@ -173,7 +237,7 @@ export default function DiaryPage() {
 
                                                 {entry.tags.length > 0 && (
                                                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 8 }}>
-                                                        {entry.tags.map(tag => (
+                                                        {entry.tags.filter(t => t !== 'Watchlist').map(tag => (
                                                             <span key={tag} style={{
                                                                 fontSize: '0.7rem', padding: '2px 8px',
                                                                 borderRadius: 20, background: 'var(--color-bg-elevated)',

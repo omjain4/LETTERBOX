@@ -27,6 +27,7 @@ interface MediaDetail {
         rating: number | null
         liked: boolean
         review: string | null
+        tags?: string[]
     }
     _count: { diaryEntries: number; reviews: number; listItems: number }
 }
@@ -180,10 +181,24 @@ export default function MediaDetailPage() {
                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}>Like</span>
                                 </button>
                                 <button
-                                    onClick={() => user ? setShowLog(true) : window.location.assign('/login')}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)' }}
+                                    onClick={async () => {
+                                        if (!user) return window.location.assign('/login')
+                                        try {
+                                            await api.post('/diary', {
+                                                mediaId: media.id,
+                                                watchedDate: new Date().toISOString().split('T')[0],
+                                                tags: ['Watchlist'],
+                                            })
+                                            // Refresh data
+                                            const { data } = await api.get(`/media/${id}`)
+                                            setMedia(data)
+                                        } catch (err) {
+                                            console.error('Failed to add to watchlist', err)
+                                        }
+                                    }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: media.userEntry?.review ? 'var(--color-text-muted)' : media.userEntry?.tags?.includes('Watchlist') ? '#818cf8' : 'var(--color-text-muted)' }}
                                 >
-                                    <Clock size={22} />
+                                    <Clock size={22} color={media.userEntry?.tags?.includes('Watchlist') ? '#818cf8' : 'currentColor'} />
                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}>Watchlist</span>
                                 </button>
                             </div>

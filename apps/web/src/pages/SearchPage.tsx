@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Search as SearchIcon, Film, Tv, Music, PlayCircle, Clapperboard, Loader2 } from "lucide-react";
+import { Search as SearchIcon, Film, Tv, Music, PlayCircle, Clapperboard, Loader2, Plus } from "lucide-react";
 import api from "../lib/api";
 import { UserCard } from "../components/UserCard";
+import { useAuth } from "../stores/auth-context";
+import LogMediaModal from "../components/LogMediaModal";
 
 const MEDIA_FILTERS = [
     { label: "All", value: "", icon: null },
@@ -22,6 +24,8 @@ export default function SearchPage() {
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [total, setTotal] = useState(0);
+    const { user } = useAuth();
+    const [logMedia, setLogMedia] = useState<any | null>(null);
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -154,59 +158,92 @@ export default function SearchPage() {
                         gap: 20,
                     }}>
                         {results.map((media) => (
-                            <Link
-                                key={media.id}
-                                to={`/media/${media.id}`}
-                                style={{ textDecoration: "none" }}
-                            >
-                                <div className="card" style={{ overflow: "hidden" }}>
-                                    <div style={{
-                                        aspectRatio: "2/3",
-                                        background: "var(--color-bg-elevated)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        overflow: "hidden",
-                                    }}>
-                                        {media.posterUrl ? (
-                                            <img
-                                                src={media.posterUrl}
-                                                alt={media.title}
-                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                            />
-                                        ) : (
-                                            <Film size={40} style={{ color: "var(--color-text-dim)" }} />
-                                        )}
-                                    </div>
-                                    <div style={{ padding: 12 }}>
-                                        <span className={`badge badge-${media.mediaType.toLowerCase()}`} style={{ marginBottom: 6 }}>
-                                            {media.mediaType.replace("_", " ")}
-                                        </span>
-                                        <h3 style={{
-                                            fontSize: "0.85rem",
-                                            fontWeight: 600,
-                                            marginTop: 6,
-                                            display: "-webkit-box",
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: "vertical",
+                            <div key={media.id} style={{ position: "relative" }}>
+                                <Link
+                                    to={`/media/${media.id}`}
+                                    style={{ textDecoration: "none" }}
+                                >
+                                    <div className="card" style={{ overflow: "hidden" }}>
+                                        <div style={{
+                                            aspectRatio: "2/3",
+                                            background: "var(--color-bg-elevated)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
                                             overflow: "hidden",
                                         }}>
-                                            {media.title}
-                                        </h3>
-                                        {media.releaseYear && (
-                                            <span style={{ fontSize: "0.75rem", color: "var(--color-text-dim)" }}>
-                                                {media.releaseYear}
+                                            {media.posterUrl ? (
+                                                <img
+                                                    src={media.posterUrl}
+                                                    alt={media.title}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                        if (e.currentTarget.parentElement) {
+                                                            const icon = document.createElement('div');
+                                                            icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-dim)"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>';
+                                                            e.currentTarget.parentElement.appendChild(icon.firstChild as Node);
+                                                        }
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Film size={40} style={{ color: "var(--color-text-dim)" }} />
+                                            )}
+                                        </div>
+                                        <div style={{ padding: 12 }}>
+                                            <span className={`badge badge-${media.mediaType.toLowerCase()}`} style={{ marginBottom: 6 }}>
+                                                {media.mediaType.replace("_", " ")}
                                             </span>
-                                        )}
-                                        {media.avgRating > 0 && (
-                                            <div style={{ marginTop: 4, fontSize: "0.8rem" }}>
-                                                <span style={{ color: "var(--color-accent)" }}>★</span>{" "}
-                                                <span style={{ fontWeight: 600 }}>{media.avgRating.toFixed(1)}</span>
-                                            </div>
-                                        )}
+                                            <h3 style={{
+                                                fontSize: "0.85rem",
+                                                fontWeight: 600,
+                                                marginTop: 6,
+                                                display: "-webkit-box",
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: "vertical",
+                                                overflow: "hidden",
+                                            }}>
+                                                {media.title}
+                                            </h3>
+                                            {media.releaseYear && (
+                                                <span style={{ fontSize: "0.75rem", color: "var(--color-text-dim)" }}>
+                                                    {media.releaseYear}
+                                                </span>
+                                            )}
+                                            {media.avgRating > 0 && (
+                                                <div style={{ marginTop: 4, fontSize: "0.8rem" }}>
+                                                    <span style={{ color: "var(--color-accent)" }}>★</span>{" "}
+                                                    <span style={{ fontWeight: 600 }}>{media.avgRating.toFixed(1)}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
+                                </Link>
+                                {/* Quick-Log Button */}
+                                {user && (
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLogMedia(media); }}
+                                        title="Quick log"
+                                        style={{
+                                            position: "absolute", top: 8, right: 8,
+                                            width: 32, height: 32,
+                                            borderRadius: "50%",
+                                            border: "2px solid rgba(255,255,255,0.3)",
+                                            background: "rgba(0,0,0,0.6)",
+                                            backdropFilter: "blur(4px)",
+                                            color: "#fff",
+                                            cursor: "pointer",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            transition: "all 0.15s ease",
+                                            zIndex: 2,
+                                        }}
+                                        onMouseEnter={e => { (e.target as HTMLElement).style.background = 'var(--color-primary)'; (e.target as HTMLElement).style.borderColor = 'var(--color-primary)' }}
+                                        onMouseLeave={e => { (e.target as HTMLElement).style.background = 'rgba(0,0,0,0.6)'; (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)' }}
+                                    >
+                                        <Plus size={16} />
+                                    </button>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </>
@@ -234,6 +271,15 @@ export default function SearchPage() {
                         Movies, TV shows, YouTube videos, songs, albums...
                     </p>
                 </div>
+            )}
+
+            {/* Quick-log modal */}
+            {logMedia && (
+                <LogMediaModal
+                    media={{ id: logMedia.id, title: logMedia.title, mediaType: logMedia.mediaType, posterUrl: logMedia.posterUrl }}
+                    onClose={() => setLogMedia(null)}
+                    onSuccess={() => { setLogMedia(null) }}
+                />
             )}
 
             <style>{`

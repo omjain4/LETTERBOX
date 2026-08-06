@@ -127,9 +127,18 @@ async function searchLastfm(query: string, maxResults = 20) {
 
     const tracks = data.results.trackmatches.track;
 
+    const uniqueTracks = new Map();
+    for (const item of tracks) {
+        const key = `${item.artist}::${item.name}`.toLowerCase();
+        if (!uniqueTracks.has(key)) {
+            uniqueTracks.set(key, item);
+        }
+    }
+    const deduplicatedTracks = Array.from(uniqueTracks.values());
+
     // Last.fm track.search only returns placeholder star images.
     // Enrich each result with real album art via parallel track.getInfo calls.
-    const enriched = await Promise.all(tracks.map(async (item: any) => {
+    const enriched = await Promise.all(deduplicatedTracks.map(async (item: any) => {
         const safeId = Buffer.from(`${item.artist}::${item.name}`).toString("base64url");
 
         let posterUrl: string | null = null;
