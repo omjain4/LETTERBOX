@@ -125,11 +125,30 @@ async function searchLastfm(query: string, maxResults = 20) {
     const data = (await res.json()) as any;
     if (!data.results || !data.results.trackmatches || !data.results.trackmatches.track) return [];
 
-    return data.results.trackmatches.track.map((item: any) => {
-        // Base64 encode the Artist::Track string identifier for safe internal ID storage
+    const tracks = data.results.trackmatches.track;
+
+    // Last.fm track.search only returns placeholder star images.
+    // Enrich each result with real album art via parallel track.getInfo calls.
+    const enriched = await Promise.all(tracks.map(async (item: any) => {
         const safeId = Buffer.from(`${item.artist}::${item.name}`).toString("base64url");
-        const poster = item.image?.find((i: any) => i.size === "extralarge")?.["#text"] ||
-            item.image?.find((i: any) => i.size === "large")?.["#text"] || null;
+
+        let posterUrl: string | null = null;
+        try {
+            const infoUrl = new URL("http://ws.audioscrobbler.com/2.0/");
+            infoUrl.searchParams.set("method", "track.getInfo");
+            infoUrl.searchParams.set("artist", item.artist);
+            infoUrl.searchParams.set("track", item.name);
+            infoUrl.searchParams.set("api_key", apiKey);
+            infoUrl.searchParams.set("format", "json");
+
+            const infoRes = await fetch(infoUrl.toString());
+            if (infoRes.ok) {
+                const info = (await infoRes.json()) as any;
+                posterUrl = info.track?.album?.image?.find((i: any) => i.size === "extralarge")?.["#text"]
+                    || info.track?.album?.image?.find((i: any) => i.size === "large")?.["#text"]
+                    || null;
+            }
+        } catch (_) { /* ignore enrichment errors */ }
 
         return {
             id: `lastfm-${safeId}`,
@@ -137,13 +156,15 @@ async function searchLastfm(query: string, maxResults = 20) {
             mediaType: "SONG",
             title: item.name,
             description: `By ${item.artist}`,
-            posterUrl: poster,
+            posterUrl,
             releaseYear: null,
             avgRating: 0,
             ratingCount: 0,
             _external: true
         };
-    });
+    }));
+
+    return enriched;
 }
 
 
