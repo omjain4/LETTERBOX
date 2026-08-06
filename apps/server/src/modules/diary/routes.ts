@@ -77,9 +77,65 @@ router.post("/", async (req: AuthRequest, res: Response) => {
         const data = createEntrySchema.parse(req.body);
 
         // Verify media exists
-        const media = await prisma.media.findUnique({
+        let media = await prisma.media.findUnique({
             where: { id: data.mediaId },
         });
+
+        // Auto-create Last.fm media if it doesn't exist yet
+        if (!media && data.mediaId.startsWith("lastfm-")) {
+            const { config } = await import("../../config/env.js");
+            const b64 = data.mediaId.replace("lastfm-", "");
+            const idStr = Buffer.from(b64, "base64url").toString("utf-8");
+            const [artist, trackName] = idStr.split("::");
+            const apiKey = config.lastfm.apiKey;
+
+            if (apiKey && artist && trackName) {
+                const url = new URL("http://ws.audioscrobbler.com/2.0/");
+                url.searchParams.set("method", "track.getInfo");
+                url.searchParams.set("artist", artist);
+                url.searchParams.set("track", trackName);
+                url.searchParams.set("api_key", apiKey);
+                url.searchParams.set("format", "json");
+
+                const lfmRes = await fetch(url.toString());
+                if (lfmRes.ok) {
+                    const lfmData = ((await lfmRes.json()) as any)?.track;
+                    if (lfmData) {
+                        const poster = lfmData.album?.image?.find((i: any) => i.size === "extralarge")?.["#text"] || null;
+                        let releaseYear: number | null = null;
+                        if (lfmData.wiki?.published) {
+                            const m = lfmData.wiki.published.match(/\b(19|20)\d{2}\b/);
+                            if (m) releaseYear = parseInt(m[0]);
+                        }
+                        const dur = parseInt(lfmData.duration);
+
+                        media = await prisma.media.create({
+                            data: {
+                                id: data.mediaId,
+                                externalId: b64,
+                                externalSource: "LASTFM",
+                                mediaType: "SONG",
+                                title: lfmData.name,
+                                description: `By ${lfmData.artist?.name || artist}${lfmData.album?.title ? ` on ${lfmData.album.title}` : ""}`,
+                                posterUrl: poster,
+                                releaseYear,
+                                runtimeMinutes: (!isNaN(dur) && dur > 0) ? Math.round(dur / 60000) : null,
+                                avgRating: 0.0,
+                                ratingCount: 0,
+                                songMetadata: {
+                                    create: {
+                                        lastfmId: lfmData.mbid || null,
+                                        artist: lfmData.artist?.name || artist,
+                                        albumName: lfmData.album?.title || null,
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
         if (!media) {
             res.status(404).json({ error: "Media not found" });
             return;
