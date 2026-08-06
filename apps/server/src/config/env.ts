@@ -24,9 +24,9 @@ export const config = {
         apiKey: process.env.YOUTUBE_API_KEY || "",
     },
 
-    spotify: {
-        clientId: process.env.SPOTIFY_CLIENT_ID || "",
-        clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
+    lastfm: {
+        apiKey: process.env.LASTFM_API_KEY || "",
+        sharedSecret: process.env.LASTFM_SHARED_SECRET || "",
     },
 
     redis: {

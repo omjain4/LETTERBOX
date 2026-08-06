@@ -232,45 +232,53 @@ router.get("/:id", optionalAuthMiddleware, async (req: AuthRequest, res: Respons
             }
         }
 
-        // Lazy-load Spotify media
-        if (!media && id.startsWith("spotify-")) {
-            const trackId = id.replace("spotify-", "");
-            const { clientId, clientSecret } = config.spotify;
-            if (clientId && clientSecret) {
-                const creds = Buffer.from(clientId + ":" + clientSecret).toString("base64");
-                let tokenRes = await fetch("https://accounts.spotify.com/api/token", {
-                    method: "POST",
-                    headers: { "Authorization": `Basic ${creds}`, "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "grant_type=client_credentials"
-                });
+        // Lazy-load Last.fm media
+        if (!media && id.startsWith("lastfm-")) {
+            const b64 = id.replace("lastfm-", "");
+            const idStr = Buffer.from(b64, "base64url").toString("utf-8");
+            const [artist, trackName] = idStr.split("::");
 
-                if (tokenRes.ok) {
-                    const tokenData = await tokenRes.json();
-                    let res = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
-                        headers: { "Authorization": `Bearer ${tokenData.access_token}` }
-                    });
+            const apiKey = config.lastfm.apiKey;
+            if (apiKey && artist && trackName) {
+                const url = new URL("http://ws.audioscrobbler.com/2.0/");
+                url.searchParams.set("method", "track.getInfo");
+                url.searchParams.set("artist", artist);
+                url.searchParams.set("track", trackName);
+                url.searchParams.set("api_key", apiKey);
+                url.searchParams.set("format", "json");
 
-                    if (res.ok) {
-                        const data = await res.json();
+                const res = await fetch(url.toString());
+                if (res.ok) {
+                    const data = (await res.json())?.track;
+                    if (data) {
+                        const poster = data.album?.image?.find((i: any) => i.size === "extralarge")?.["#text"] || null;
+
+                        let releaseYear = null;
+                        if (data.wiki?.published) {
+                            const match = data.wiki.published.match(/\b(19|20)\d{2}\b/);
+                            if (match) releaseYear = parseInt(match[0]);
+                        }
+                        const dur = parseInt(data.duration);
+
                         try {
                             media = await prisma.media.create({
                                 data: {
                                     id: id,
-                                    externalId: String(data.id),
-                                    externalSource: "SPOTIFY",
+                                    externalId: b64,
+                                    externalSource: "LASTFM",
                                     mediaType: "SONG",
                                     title: data.name,
-                                    description: `By ${data.artists.map((a: any) => a.name).join(", ")} on ${data.album.name}`,
-                                    posterUrl: data.album.images.length > 0 ? data.album.images[0].url : null,
-                                    releaseYear: parseInt(data.album.release_date.split("-")[0]),
-                                    runtimeMinutes: Math.round(data.duration_ms / 60000),
+                                    description: `By ${data.artist?.name || artist}${data.album?.title ? ` on ${data.album.title}` : ""}`,
+                                    posterUrl: poster,
+                                    releaseYear: releaseYear,
+                                    runtimeMinutes: (!isNaN(dur) && dur > 0) ? Math.round(dur / 60000) : null,
                                     avgRating: 0.0,
                                     ratingCount: 0,
                                     songMetadata: {
                                         create: {
-                                            spotifyId: String(data.id),
-                                            artist: data.artists.map((a: any) => a.name).join(", "),
-                                            albumName: data.album.name
+                                            lastfmId: data.mbid || null,
+                                            artist: data.artist?.name || artist,
+                                            albumName: data.album?.title || null
                                         }
                                     }
                                 },
@@ -280,7 +288,7 @@ router.get("/:id", optionalAuthMiddleware, async (req: AuthRequest, res: Respons
                             return res.status(500).json({ error: String(e) });
                         }
                     } else {
-                        console.error("Spotify API error fetching track:", res.status);
+                        console.error("Last.fm API error fetching track:", res.status);
                     }
                 }
             }

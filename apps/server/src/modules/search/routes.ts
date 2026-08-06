@@ -106,62 +106,44 @@ async function searchTMDB(query: string, type: "MOVIE" | "TV_SHOW", maxResults =
 
 
 
-let spotifyAccessToken = "";
-let spotifyTokenExpiresAt = 0;
+// ─── Last.fm API Search ─────────────────────────────────────
 
-async function getSpotifyToken() {
-    if (Date.now() < spotifyTokenExpiresAt && spotifyAccessToken) {
-        return spotifyAccessToken;
-    }
-    const { clientId, clientSecret } = config.spotify;
-    if (!clientId || !clientSecret) return null;
+async function searchLastfm(query: string, maxResults = 20) {
+    const apiKey = config.lastfm.apiKey;
+    if (!apiKey) return [];
 
-    const credentials = Buffer.from(clientId + ":" + clientSecret).toString("base64");
-    const res = await fetch("https://accounts.spotify.com/api/token", {
-        method: "POST",
-        headers: {
-            "Authorization": `Basic ${credentials}`,
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: "grant_type=client_credentials"
-    });
-
-    if (!res.ok) return null;
-    const data: any = await res.json();
-    spotifyAccessToken = data.access_token;
-    spotifyTokenExpiresAt = Date.now() + (data.expires_in - 300) * 1000;
-    return spotifyAccessToken;
-}
-
-async function searchSpotify(query: string, maxResults = 20) {
-    const token = await getSpotifyToken();
-    if (!token) return [];
-
-    const url = new URL("https://api.spotify.com/v1/search");
-    url.searchParams.set("q", query);
-    url.searchParams.set("type", "track");
+    const url = new URL("http://ws.audioscrobbler.com/2.0/");
+    url.searchParams.set("method", "track.search");
+    url.searchParams.set("track", query);
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("format", "json");
     url.searchParams.set("limit", String(maxResults));
 
-    const res = await fetch(url.toString(), {
-        headers: { "Authorization": `Bearer ${token}` }
-    });
+    const res = await fetch(url.toString());
     if (!res.ok) return [];
 
     const data = (await res.json()) as any;
-    if (!data.tracks || !data.tracks.items) return [];
+    if (!data.results || !data.results.trackmatches || !data.results.trackmatches.track) return [];
 
-    return data.tracks.items.map((item: any) => ({
-        id: `spotify-${item.id}`,
-        externalId: String(item.id),
-        mediaType: "SONG",
-        title: item.name,
-        description: `By ${item.artists.map((a: any) => a.name).join(", ")} on ${item.album.name}`,
-        posterUrl: item.album.images.length > 0 ? item.album.images[0].url : null,
-        releaseYear: parseInt(item.album.release_date.split("-")[0]),
-        avgRating: 0,
-        ratingCount: 0,
-        _external: true
-    }));
+    return data.results.trackmatches.track.map((item: any) => {
+        // Base64 encode the Artist::Track string identifier for safe internal ID storage
+        const safeId = Buffer.from(`${item.artist}::${item.name}`).toString("base64url");
+        const poster = item.image?.find((i: any) => i.size === "extralarge")?.["#text"] ||
+            item.image?.find((i: any) => i.size === "large")?.["#text"] || null;
+
+        return {
+            id: `lastfm-${safeId}`,
+            externalId: safeId,
+            mediaType: "SONG",
+            title: item.name,
+            description: `By ${item.artist}`,
+            posterUrl: poster,
+            releaseYear: null,
+            avgRating: 0,
+            ratingCount: 0,
+            _external: true
+        };
+    });
 }
 
 
@@ -236,7 +218,7 @@ router.get("/", async (req: Request, res: Response) => {
             finalResults = [...results, ...filteredExternal];
             totalResults = finalResults.length;
         } else if (typeStr === "SONG") {
-            const externalPromise = searchSpotify(queryStr, take);
+            const externalPromise = searchLastfm(queryStr, take);
             const { results } = await searchLocal(queryStr, typeStr, skip, take);
             const external = await externalPromise;
             const localIds = new Set(results.map((r: any) => r.externalId));
@@ -248,11 +230,11 @@ router.get("/", async (req: Request, res: Response) => {
             const pYT = searchYouTube(queryStr, 5);
             const pTMDB1 = searchTMDB(queryStr, "MOVIE", 5);
             const pTMDB2 = searchTMDB(queryStr, "TV_SHOW", 5);
-            const pSpot = searchSpotify(queryStr, 5);
+            const pLastfm = searchLastfm(queryStr, 5);
             const { results } = await searchLocal(queryStr, undefined, skip, take);
 
-            const [yt, t1, t2, spot] = await Promise.all([pYT, pTMDB1, pTMDB2, pSpot]);
-            const external = [...yt, ...t1, ...t2, ...spot];
+            const [yt, t1, t2, lastfmRes] = await Promise.all([pYT, pTMDB1, pTMDB2, pLastfm]);
+            const external = [...yt, ...t1, ...t2, ...lastfmRes];
             const localIds = new Set(results.map((r: any) => r.externalId));
             const filteredExternal = external.filter((e: any) => !localIds.has(e.externalId) && e.externalId);
             finalResults = [...results, ...filteredExternal];
